@@ -31,10 +31,45 @@ module ldt_core (
 	assign dump = 1; // defaunt on 
 	assign charge = 0;
 	assign status_led = 1; // power led
-	assign sda_oe = 0;
-	assign sda_out = 0;
-	assign scl_oe = 0;
-	assign scl_out = 0;
+	//assign sda_oe = 0;
+	//assign sda_out = 0;
+	//assign scl_oe = 0;
+	//assign scl_out = 0;
+
+	// Connect Accel block to sda/scl interface
+	accel_master i_accel (
+		.clk		( clk ),
+		.reset		( reset ),
+		// i2c bus
+		.sda_in		( sda_in  ),
+		.sda_oe		( sda_oe  ),
+		.sda_out	( sda_out ),
+		.scl_in		( scl_in  ),
+		.scl_oe 	( scl_oe  ),
+		.scl_out	( scl_out ),
+		// Status
+		.ready 		( ),
+		.sample		( ), 
+		// Data
+		.sdata		( ),
+		.x_valid	( ),
+		.y_valid	( ),
+		.z_valid	( )
+	);
+
+	// Launch Detect
+	
+	// Continuity
+
+	// Speaker Tone Generator
+
+	// Timer
+
+	// PreCharge
+
+	// Deployment
+
+	// Recovery Warble
 
 endmodule
 
