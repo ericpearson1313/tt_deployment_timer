@@ -32,9 +32,18 @@ async def test_project(dut):
     # Wait for one clock cycle to see the output values
     await ClockCycles(dut.clk, 1)
 
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
+    # match the actual expected output of your module:
+    assert dut.cont_enable.value == 1
+    assert dut.speaker.value == 0
+    assert dut.deploy.value == 0
+    assert dut.dump.value == 1
+    assert dut.charge.value == 0
+    assert dut.status_led.value == 1
+    assert dut.sda_accel_oe.value == 0
+    assert dut.sda_accel_out.value == 0
+    assert dut.scl_accel_oe.value == 0
+    assert dut.scl_accel_out.value == 0
+
 
     # Keep testing the module by changing the input values, waiting for
     # one or more clock cycles, and asserting the expected output values.
