@@ -23,7 +23,7 @@ module ldt_core (
     	output logic 		scl_oe     ,
     	output logic 		scl_out    ,
 		// fpga probes
-		output [11:0]		x, y, z
+		output logic [11:0]	x, y, z
     );
 
 	// Tie off outputs
@@ -39,28 +39,42 @@ module ldt_core (
 	//assign scl_out = 0;
 
 	// Connect Accel block to sda/scl interface
+	logic x_valid;
+	logic y_valid;
+	logic z_valid;
+	logic sdata;
+	logic sample;
 	accel_master i_accel (
-		.clk		( clk ),
+		.clk			( clk ),
 		.reset		( reset ),
 		// i2c bus
 		.sda_in		( sda_in  ),
 		.sda_oe		( sda_oe  ),
-		.sda_out	( sda_out ),
+		.sda_out		( sda_out ),
 		.scl_in		( scl_in  ),
-		.scl_oe 	( scl_oe  ),
-		.scl_out	( scl_out ),
+		.scl_oe 		( scl_oe  ),
+		.scl_out		( scl_out ),
 		// Status
-		.ready 		( ),
-		.sample		( ), 
+		.sample		(sample ), 
 		// Data
-		.sdata		( ),
-		.x_valid	( ),
-		.y_valid	( ),
-		.z_valid	( )
+		.sdata		(sdata ),
+		.x_valid		(x_valid),
+		.y_valid		(y_valid),
+		.z_valid		(z_valid)
 	);
 	
+	// Testbench fpga monitors of x,y,z
 	
-
+	logic [11:0] xs, ys, zs;
+	always @(posedge clk) begin
+		xs <= ( reset ) ? 0 : ( x_valid ) ? { xs[10:0], sdata } : xs;
+		ys <= ( reset ) ? 0 : ( y_valid ) ? { ys[10:0], sdata } : ys;
+		zs <= ( reset ) ? 0 : ( z_valid ) ? { zs[10:0], sdata } : zs;
+		x <= ( reset ) ? 0 : ( sample ) ? xs : x;
+		y <= ( reset ) ? 0 : ( sample ) ? ys : y;
+		z <= ( reset ) ? 0 : ( sample ) ? zs : z;
+	end
+	
 	// Launch Detect
 	
 	// Continuity
