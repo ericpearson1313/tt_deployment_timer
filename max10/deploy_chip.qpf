@@ -28,4 +28,4 @@ DATE = "11:07:06  May 16, 2024"
 
 # Revisions
 
-PROJECT_REVISION = "pump_chip"
+PROJECT_REVISION = "deploy_chip"

@@ -21,7 +21,9 @@ module ldt_core (
     	output logic 		sda_out    ,
     	input  logic 		scl_in     ,
     	output logic 		scl_oe     ,
-    	output logic 		scl_out    
+    	output logic 		scl_out    ,
+		// fpga probes
+		output [11:0]		x, y, z
     );
 
 	// Tie off outputs
@@ -56,6 +58,8 @@ module ldt_core (
 		.y_valid	( ),
 		.z_valid	( )
 	);
+	
+	
 
 	// Launch Detect
 	

@@ -63,20 +63,20 @@ module deploy_chip
 );
 
 	// all I/O is internally emulated in the code as we are a full simulation
-	logic adc_ncs;   	// pin 132
-	logic adc_clk;   	// pin 105
-	logic adc_miso;  	// pin 106
-	logic adc_mosi;  	// pin 65 
-	logic setup_sw;  	// pin 62 
-	logic period_sw; 	// pin 135
-	logic timeout_sw;	// pin 66 
-	logic button; 		// pin 140
-	logic time_led; 	// pin 101
-	logic fault_led; 	// pin 99
-	logic run_led; 	// pin 100
-	logic pump_out; 	// pin 124
-
-
+	logic [3:0] dip_sw		;
+	logic 		cont_sense	;
+	logic 		cont_enable	;
+	logic 		speaker		;
+	logic 		charge		;
+	logic 		dump			;
+	logic 		deploy		;
+	logic 		status_led	;
+	logic 		sda_in		;
+	logic 		sda_oe		;
+	logic 		sda_out		;
+	logic 		scl_in		;
+	logic 		scl_oe		;
+	logic 		scl_out		;
 
 	logic [4:0] key; // keypad, bit 4 indicates pressed
 
@@ -116,7 +116,7 @@ module deploy_chip
 
 
 	// AIN LED Display with counter
-	assign anain[4:1] = ~{ time_led, fault_led, run_led, pump_out }; // active low leds
+	assign anain[4:1] = 0; // active low leds
 
 	logic [24:0] count;
 	always @(posedge clk) begin
@@ -128,150 +128,81 @@ module deploy_chip
 	/////////////////////////////////
 	/////////////////////////////////
 	////
-	////  Pump Chip (DUT) 
+	////  LDT Chip (DUT) 
 	////
 	/////////////////////////////////
 	/////////////////////////////////
 
   // Fpga probes
 
-	logic [31:0] fpga_probe;	
-	logic [31:0] fpga_probe2;	
+	logic [11:0] fpga_probe;	
+	logic [11:0] fpga_probe2;	
 	logic [11:0] fpga_probe3;	
-	
 
-	// Register ADC I/O
-		
-	wire ncs_io, clk_io, mosi_io, miso_io; 
-	always @(posedge clk) adc_ncs <= ncs_io;
-	always @(posedge clk) adc_clk <= clk_io;
-	always @(posedge clk) adc_mosi <= mosi_io;
-	always @(posedge clk) miso_io <= adc_miso; 
 	
-	// PUMP Chip CORE emulation/test
-	localparam NUM_SAMPLE = 3750;//250; // // 3750 is realtime, 250 is 15x realtime
-	ldt_core #(
-		.NUM_SAMPLE( NUM_SAMPLE ), 
-		.MAX_RMS( 1103 ) // 15 amps
-	) i_core (
-		// System
-		.clk			( clk ),
-		.reset 		( reset ),
-		.fpga_probe ( fpga_probe ),
-		.fpga_probe2 ( fpga_probe2 ),
-		// Dig IO
-		.button		( button ),
-		.setup_sw	( setup_sw ),
-		.period_sw	( period_sw ),
-		.timeout_sw	( timeout_sw ),
-		.time_led	( time_led ),
-		.fault_led	( fault_led ),
-		.run_led		( run_led ),
-		.pump_out	( pump_out ),
-		// ADC Interface
-		.adc_ncs    ( ncs_io ),
-		.adc_clk		( clk_io ),
-		.adc_mosi	( mosi_io ),
-		.adc_miso	( miso_io )
+	// DEPLOY Chip CORE emulation/test
+	// Instantiate core
+
+	
+	ldt_core i_core (
+		.clk			( clk		),
+		.reset		( reset 		),
+		// Chip Inputs
+		.dip_sw 		( dip_sw[3:0]	),
+		.cont_sense	( cont_sense	),
+		// Chip Outputs
+		.cont_enable( cont_enable	),
+		.speaker		( speaker		),
+		.charge		( charge			),
+		.dump			( dump			),
+		.deploy		( deploy			),
+		.status_led ( status_led	),
+		// I2C bidir ports connection to accel
+		.sda_in		( sda_in			),
+		.sda_oe		( sda_oe			),
+		.sda_out		( sda_out		),
+		.scl_in		( scl_in			),
+		.scl_oe		( scl_oe			),
+		.scl_out		( scl_out		),
+		// Internal monitor of accel readings
+		.x	 			( fpga_probe 	),
+		.y	 			( fpga_probe2 	),
+		.z	 			( fpga_probe3 	)		
 	);
 
   	//////////////////////
   	//////////////////////
 	//
-  	// ADC System Simulation
-	//
+  	// System Simulation
+	//    
   	/////////////////////
   	//////////////////////
 
-	logic [11:0] ref_in;
 	/////////////
 	// Sim Time
 	/////////////
 	
-	// 4 Hz (or 60 Hz for 15x faster that realtime
+	// 4 Hz 
 	logic [23:0] tick_cnt;
 	logic sys_tick;
 	logic [19:0] time_cnt; // sim time count is count of tick's 
 
 	always_ff @(posedge clk) 
-		if( NUM_SAMPLE == 250 ) begin
-			tick_cnt <= ( reset ) ? 0 : ( tick_cnt == (48000000 / 60) - 1 ) ? 0 : tick_cnt + 1;
-			sys_tick <=  ( tick_cnt == (48000000 / 60) - 1 ) ? 1'b1 : 1'b0 ;	// 15x faster realtime
-			time_cnt <= ( reset ) ? 0 : ( tick_cnt == (48000000 / 60) - 1 ) ? time_cnt + 1 : time_cnt;
-		end else begin
+		begin
 			tick_cnt <= ( reset ) ? 0 : ( tick_cnt == (48000000 / 4) - 1 ) ? 0 : tick_cnt + 1;
 		   sys_tick <=  ( tick_cnt == (48000000 / 4 ) - 1 ) ? 1'b1 : 1'b0 ; 	// Realtime	
 			time_cnt <= ( reset ) ? 0 : ( tick_cnt == (48000000 / 4) - 1 ) ? time_cnt + 1 : time_cnt;
 		end
 	
-	// Model Inputs
-	logic empty, stall, n_empty;
-	
+
 	// Test Inputs driving.
 	always_comb begin
-		// Defaut Nominal, Test 1
-		// ADC Inptu
-		ref_in = 663; // 663 ~9A RMS
-		// Chip Inputs
-		button = 1;
-		setup_sw = 1;
-		period_sw  = 1; 
-		timeout_sw = 0;  /// default 3 min
-		// Model Inputs
-		empty = 0;
-		stall = 0;
-		n_empty = 0;
-		
-		// Test 2, short cycle fault 
-		//empty = 1; // observed 3 blink fault code
-		
-		// Test 3, timeout faults 
-		//n_empty = 1; // observed 1 blink fault code (3min, 6min, 12min, 24min each tested)
-		
-		// Test 4, stall over current fault test
-		//stall = 1; // Observed 2 blink fault code
-		
-		// Test 5: button restart
-		//button = ( 	time_cnt == 'h40 ) ? 1'b0 : 1'b1;
+		dip_sw = 3'd1111; 
+		cont_sense = 0;
 
-		// Test 6: test sweep
-		// serially test all features. except setup and 24hr
-		//button = ( 								// Reset normal
-		//				time_cnt == 'h80 ||	// Button normal
-		//				time_cnt == 'h100 ||	// Button short cycle
-		//				time_cnt == 'h180 ||	// Button over current
-		//				time_cnt == 'h200 ||	// Timeout 3 min
-		//				time_cnt == 'h600 ||	// Timeout 6 min
-		//				time_cnt == 'hD00 ||	// timeout 12 min
-		//				time_cnt == 'h1A00 ||// Timeout 24 min
-		//				time_cnt == 'h3200 ||// Button Normal
-		//				time_cnt == 'h3240 	// Wait 24hr, and be a over current
-		//						) ? 1'b0 : 1'b1;
-		//empty = ( time_cnt >= 'h100 && time_cnt < 'h180 ) ? 1'b1 : 1'b0;
-		////stall = ( time_cnt >= 'hC0 && time_cnt < 'h200 || time_cnt >= 3240 ) ? 1'b1 : 1'b0;
-		//stall = ( time_cnt >= 'h180 && time_cnt < 'h200 ) ? 1'b1 : 1'b0;
-		//
-		//n_empty 		= ( time_cnt >= 'h200  && time_cnt <'h3200 ) ? 1'b1 : 1'b0;
-		//timeout_sw 	= ( time_cnt >= 'h200  && time_cnt <'h600 ||
-		//				    time_cnt >= 'hD00  && time_cnt <'h1A00 ) ?1'b0 : 1'b1;
-		//period_sw  	= ( time_cnt >= 'hD00  && time_cnt <'h3200 ) ?1'b0 : 1'b1;						  
-		
-		// Test 7 : setup, with ref ramp up/down while button pressed
-		//button = ( time_cnt >= 1 && time_cnt < 80 ) ? 0 : 1;
-		//ref_in = ( time_cnt >= 1 && time_cnt < 40 ) ? (time_cnt << 5) : 
-		//         ( time_cnt >= 40 && time_cnt < 80 ) ? ((80-time_cnt)<<5) : 663;
-		//setup_sw = 0;
-		//n_empty = 1;
-		
-		//Test 8: 24hr test. 
-		//Pump om power up, set it to timeout (3min)
-		n_empty = ( time_cnt >= 'h40 ) ? 1 : 0;
-
+		// Test 1: do nothing
 		
 	end
-	
-
-	
 	
 	
 	/////////////////////
@@ -294,11 +225,11 @@ module deploy_chip
 	
 	// Scope monitor probes 
 	logic signed [4:0][11:0] probe;
-	assign probe[0] = dout0;	// pump ct wave
-	assign probe[1] = dout1;	// Ref
-	assign probe[2] = rms_hold[0][30-:12]; // RMS^2
-	assign probe[3] = rms_hold[1][30-:12];
-	assign probe[4] = fpga_probe3; //dout0 >>> 1; probe3 is the model's live Scale factor, about 50% is 1:1
+	assign probe[0] = fpga_probe;		// x
+	assign probe[1] = fpga_probe2;	// y
+	assign probe[2] = fpga_probe3; 	// z
+	assign probe[3] = 0;
+	assign probe[4] = { 2'h0, dip_sw[3:0], 6'h00 }; 
 
 	
 	//////////////////////////////
@@ -333,15 +264,15 @@ module deploy_chip
 	// monitor 8x chip I/O pins
 	
 	assign dig_mon = { 
-							time_led		, 
-							fault_led	,
-							run_led 		,
-							setup_sw 	,
-							period_sw 	,
-							timeout_sw 	,
-							button		, 
-							pump_out  
-							};	
+							cont_sense		,
+							cont_enable		,
+							speaker			,
+							charge			,
+							dump				, 
+							deploy			,
+							status_led		,
+							1'b0
+						};	
 							
 		
 	// monitor 5x 12-bit analog channels
@@ -360,8 +291,8 @@ module deploy_chip
 	
 	// Fast scope Inputs
 	assign fast_clk = clk_out; //(6mhz)
-	assign fast_cs = adc_ncs; // triggered on rising edge
-	assign fast_data = { adc_ncs, adc_clk, adc_mosi, adc_miso }; // bottom to top
+	assign fast_cs = scl_in; // triggered on rising edge
+	assign fast_data = { scl_oe, sda_oe, scl_in, sda_in }; // bottom to top
 	
 	/////////////////////////////////
 	////
@@ -975,12 +906,12 @@ module deploy_chip
 	
 	// 12bit hex overlays(4)
 	logic [5:0] hex_str;
-	hex_overlay #(.LEN(3)) _hex0 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h01), .out( hex_str[0]), .in( dout0 ) );
-	hex_overlay #(.LEN(3)) _hex1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h03), .out( hex_str[1]), .in( dout1 ) );
-	hex_overlay #(.LEN(8)) _hex2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h05), .out( hex_str[2]), .in( rms_hold[0] ) );
-	hex_overlay #(.LEN(8)) _hex3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h07), .out( hex_str[3]), .in( rms_hold[1] ) );
-	hex_overlay #(.LEN(8)) _hex4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h09), .out( hex_str[4]), .in( fpga_probe ) );
-	hex_overlay #(.LEN(8)) _hex5 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h0B), .out( hex_str[5]), .in( fpga_probe2 ) );
+	//hex_overlay #(.LEN(3)) _hex0 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h01), .out( hex_str[0]), .in( dout0 ) );
+	//hex_overlay #(.LEN(3)) _hex1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h03), .out( hex_str[1]), .in( dout1 ) );
+	//hex_overlay #(.LEN(8)) _hex2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h05), .out( hex_str[2]), .in( rms_hold[0] ) );
+	//hex_overlay #(.LEN(8)) _hex3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h07), .out( hex_str[3]), .in( rms_hold[1] ) );
+	//hex_overlay #(.LEN(8)) _hex4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h09), .out( hex_str[4]), .in( fpga_probe ) );
+	//hex_overlay #(.LEN(8)) _hex5 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h0B), .out( hex_str[5]), .in( fpga_probe2 ) );
 					
 	// dump binary	values	
 	logic [3:0] bin_str;
@@ -991,15 +922,14 @@ module deploy_chip
 
    // Text legend
    logic [7:0] leg_str;
-   string_overlay #(.LEN(7)) i_leg00 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+0), .out( leg_str[0] ), .str("Pump   ") );
-   string_overlay #(.LEN(7)) i_leg01 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+1), .out( leg_str[1] ), .str("Button ") );
-   string_overlay #(.LEN(7)) i_leg02 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+2), .out( leg_str[2] ), .str("timeout") );
-   string_overlay #(.LEN(7)) i_leg03 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+3), .out( leg_str[3] ), .str("period ") );
-   string_overlay #(.LEN(7)) i_leg04 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+4), .out( leg_str[4] ), .str("setup  ") );
-   string_overlay #(.LEN(7)) i_leg05 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+5), .out( leg_str[5] ), .str("Run    ") );
-   string_overlay #(.LEN(7)) i_leg06 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+6), .out( leg_str[6] ), .str("Fault  ") );
-   string_overlay #(.LEN(7)) i_leg07 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+7), .out( leg_str[7] ), .str("Time   ") );
-							
+   string_overlay #(.LEN(8)) i_leg00 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+0), .out( leg_str[0] ), .str("cont_sns") );
+   string_overlay #(.LEN(8)) i_leg01 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+1), .out( leg_str[1] ), .str("cont_en ") );
+   string_overlay #(.LEN(8)) i_leg02 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+2), .out( leg_str[2] ), .str("speaker ") );
+   string_overlay #(.LEN(8)) i_leg03 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+3), .out( leg_str[3] ), .str("charge  ") );
+   string_overlay #(.LEN(8)) i_leg04 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+4), .out( leg_str[4] ), .str("dump    ") );
+   string_overlay #(.LEN(8)) i_leg05 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+5), .out( leg_str[5] ), .str("deploy  ") );
+   string_overlay #(.LEN(8)) i_leg06 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+6), .out( leg_str[6] ), .str("sts_led ") );
+   string_overlay #(.LEN(8)) i_leg07 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+7), .out( leg_str[7] ), .str("        ") );
 	
 	// Merge overlays
 	logic overlay;
