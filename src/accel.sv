@@ -139,10 +139,12 @@ module accel_slave (
 endmodule
 
 // Accel monitor: monitor the I2c bus traffic and report x,y,z as they pass by
+// External metastability flops and filtering
 module accel_monitor (
 	// System
 	input  logic clk,
 	input  logic reset,
+	input  logic en, // Allows LPF 
 	// I2C bus
     input  logic sda,
     input  logic scl,
@@ -154,6 +156,50 @@ module accel_monitor (
 	output logic [11:0] z
 );
 
+	// Deterine events
+	logic sda_del, scl_del;
+	logic start, stop, rise; // edges to detect
+	always_ff @(posedge clk) begin
+		sda_del <= ( reset ) ? 1 : ( en ) ? sda : sda_del;
+		scl_del <= ( reset ) ? 1 : ( en ) ? scl : scl_del;
+		start <= en & scl & scl_del & !sda &  sda_del;
+		stop  <= en & scl & scl_del &  sda & !sda_del;
+		rise <=  en & scl & !scl_del;
+	end
+	
+	// count starts, stops, and rising edges
+	logic [1:0] start_cnt;
+	logic [6:0] rise_cnt; // Max 8 * 9 = 72
+	always_ff @(posedge clk) begin
+		start_cnt <= ( reset ) ? 0 : ( stop ) ? 0 : ( start ) ? start_cnt + 1 : start_cnt;
+		rise_cnt  <= ( reset ) ? 0 : ( start ) ? 0 : ( rise ) ? rise_cnt  + 1 : rise_cnt ;
+	end
+
+	// Shift data into regisers MSB first
+	// start_cnt == 2,
+	// sample sda at rise, 
+	// X rise_cnt = 2*9+;8, 3*9+:4
+	// Y rise_cnt = 4*9+;8, 5*9+:4
+	// Z rise_cnt = 6*9+;8, 7*9+:4
+	logic enx, eny, enz;
+	assign enx = (( start_cnt == 2 && rise && rise_cnt >= 2*9 && rise_cnt < 2*9+8 ) ||
+				  ( start_cnt == 2 && rise && rise_cnt >= 3*9 && rise_cnt < 2*9+4 ) ) ? 1'b1 : 1'b0;
+	assign eny = (( start_cnt == 2 && rise && rise_cnt >= 4*9 && rise_cnt < 2*9+8 ) ||
+				  ( start_cnt == 2 && rise && rise_cnt >= 5*9 && rise_cnt < 2*9+4 ) ) ? 1'b1 : 1'b0;
+	assign enz = (( start_cnt == 2 && rise && rise_cnt >= 6*9 && rise_cnt < 2*9+8 ) ||
+				  ( start_cnt == 2 && rise && rise_cnt >= 7*9 && rise_cnt < 2*9+4 ) ) ? 1'b1 : 1'b0;
+	logic [11:0] sregx, sregy, sregz;
+	
+	always_ff @(posedge clk) begin
+			sregx <= ( reset ) ? 0 : ( enx ) ? { sregx[10:0], sda } : sregx;
+			sregy <= ( reset ) ? 0 : ( eny ) ? { sregx[10:0], sda } : sregy;
+			sregz <= ( reset ) ? 0 : ( enz ) ? { sregx[10:0], sda } : sregz;
+			x <= ( reset ) ? 0 : ( stop ) ? sregx : x;
+			y <= ( reset ) ? 0 : ( stop ) ? sregy : y;
+			z <= ( reset ) ? 0 : ( stop ) ? sregz : z;
+			strobe <= stop;
+	end
+	
 endmodule
 
 
