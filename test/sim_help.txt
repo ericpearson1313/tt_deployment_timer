@@ -1,0 +1,1 @@
+make -B WAVES=1 SIM=verilator EXTRA_ARGS="--trace-fst --trace --Wno-fatal --Wno-WIDTH --Wno-UNOPTFLAT --Wno-UNUSED --error-limit 0"

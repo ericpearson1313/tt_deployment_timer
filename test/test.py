@@ -39,11 +39,14 @@ async def test_project(dut):
     assert dut.dump.value == 1
     assert dut.charge.value == 0
     assert dut.status_led.value == 1
-    assert dut.sda_accel_oe.value == 0
-    assert dut.sda_accel_out.value == 0
-    assert dut.scl_accel_oe.value == 0
-    assert dut.scl_accel_out.value == 0
+    assert dut.sda_oe.value == 0
+    assert dut.sda_out.value == 0
+    assert dut.scl_oe.value == 0
+    assert dut.scl_out.value == 0
 
+    # Wait for a 2 milisecs
+    await ClockCycles(dut.clk, 2*1000*48 )
+    assert dut.speaker.value == 0
 
     # Keep testing the module by changing the input values, waiting for
     # one or more clock cycles, and asserting the expected output values.

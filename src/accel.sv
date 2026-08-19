@@ -92,7 +92,7 @@ module accel_master (
 	logic [7:0] init_addr = { 8'h0d };
 	logic [7:0] init_data = { 1'b0, /*fsr =*/2'b01, 5'h00 };
 	logic [7:0] cmd_read  = { 7'h10, 1'b1 };
-	logic [7:0] read_addr = { 8'h03,  };
+	logic [7:0] read_addr = { 8'h03 };
 	// index into bytges based on bit_cnt
 	logic [2:0] idx;
 	assign idx = 8 - bit_cnt;
@@ -126,12 +126,9 @@ module accel_slave (
 	input  logic clk,
 	input  logic reset,
 	// I2C bus
-    output logic sda_in     ,
-    input  logic sda_oe     ,
-    input  logic sda_out    ,
-    output logic scl_in     ,
-    input  logic scl_oe     ,
-    input  logic scl_out	,
+    input  logic sda     ,
+    output logic sda_oe     ,
+    input  logic scl     ,
 	// inner interface (from tb/model)
 	// values returend when reading x,y,z.
 	input  logic [11:0] x	,
@@ -151,7 +148,7 @@ module accel_monitor (
     input  logic scl,
 	// inner interface (from tb/model)
 	// values returend when reading x,y,z.
-	output logic strove, // valid after all 3 are stable
+	output logic strobe, // valid after all 3 are stable
 	output logic [11:0] x,
 	output logic [11:0] y,
 	output logic [11:0] z

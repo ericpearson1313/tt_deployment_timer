@@ -42,7 +42,11 @@ module tt_um_deploy_timer(
 		.sda_out	( uio_out[0]),
 		.scl_in		( uio_in[1] ),
 		.scl_oe		( uio_oe[1] ),
-		.scl_out	( uio_out[1])
+		.scl_out	( uio_out[1]),
+		// not used
+		.x(), 
+		.y(),
+		.z()
 	);
 
 endmodule
