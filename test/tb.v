@@ -88,22 +88,23 @@ module tb ();
     	.y( y ),
     	.z( z )
 	);
-	assign x = 12'h7e1;
-	assign y = 12'h3c2;
-	assign z = 12'h184;
 
 	// WIre up a accel monitor
 	wire [11:0] xm, ym, zm; // accell inputs into model
+	wire strobe, data_strobe;
+	wire [7:0] data;
 	accel_monitor i_accel_mon (
     	.clk(clk),
     	.reset(reset),
 		.en( 1 ),
     	.sda( sda ) ,
     	.scl( scl ) ,
-		.strobe( ),
+		.strobe( strobe ),
     	.x( xm ),
     	.y( ym ),
-    	.z( zm )
+    	.z( zm ),
+		.data( data ),
+		.data_strobe( data_strobe )
 	);
 
 endmodule

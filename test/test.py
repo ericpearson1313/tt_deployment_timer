@@ -10,8 +10,8 @@ from cocotb.triggers import ClockCycles
 async def test_project(dut):
     dut._log.info("Start")
 
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, unit="us")
+    # Set the clock period to 48 MHz
+    clock = Clock(dut.clk, 20832, unit="ps")
     cocotb.start_soon(clock.start())
 
     # Reset
@@ -22,6 +22,10 @@ async def test_project(dut):
     dut.rst_n.value = 0
     await ClockCycles(dut.clk, 10)
     dut.rst_n.value = 1
+    dut.x.value = 1111;
+    dut.y.value = 2222;
+    dut.z.value = 3333;
+
 
     dut._log.info("Test project behavior")
 
@@ -44,8 +48,14 @@ async def test_project(dut):
     assert dut.scl_oe.value == 0
     assert dut.scl_out.value == 0
 
-    # Wait for a 2 milisecs
-    await ClockCycles(dut.clk, 2*1000*48 )
+    # Wait for a 1 milisecs
+    await ClockCycles(dut.clk, 1*1000*48 )
+    assert dut.xm.value == 1111
+    assert dut.ym.value == 2222
+    assert dut.zm.value == 3333
+
+    # Wait for a 10 milisecs
+    await ClockCycles(dut.clk, 10*1000*48 )
     assert dut.speaker.value == 0
 
     # Keep testing the module by changing the input values, waiting for
