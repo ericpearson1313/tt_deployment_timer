@@ -49,23 +49,23 @@ module accel_master (
 		sample <= ( cyc_cnt == 119 && bit_cnt == 10 && byte_cnt == 11 ) ? 1'b1 : 1'b0;
 	
 	// Generate the SCL;
-	// during teh first 11 bytes dureing bits 1 thru 9 following ph1 for pulling the clk low
+	// during teh first 12 bytes dureing bits 1 thru 9 following ph1 for pulling the clk low
 	// during bit 0 scl is high for start or stop, but low in gaps
 	assign scl_out = 0; // openj collector, drive oe to get a low
 	always_ff @(posedge clk) 
-		scl_oe <= ( byte_cnt < 11 && bit_cnt >= 1 && bit_cnt <= 9 && ph1 ||
-		            byte_cnt < 11 && bit_cnt == 10 ||
-                    byte_cnt >= 1 && byte_cnt < 11 && byte_cnt != 3 && bit_cnt == 0  ) ? 1 : 0;
+		scl_oe <= ( byte_cnt < 12 && bit_cnt >= 1 && bit_cnt <= 9 && ph1 ||
+		            byte_cnt < 12 && bit_cnt == 10 ||
+                    byte_cnt >= 1 && byte_cnt < 12 && byte_cnt != 3 && byte_cnt != 5 && bit_cnt == 0  ) ? 1 : 0;
 		
 	// Generatge the sampel pulses
 	// duroign bytes 5-10, bits 1 - 8, then 1 - 4, at rising edge of clk cyc_cnt 71 )
 	always @(posedge clk) begin
-		x_valid <= 	( byte_cnt == 5 && bit_cnt >= 1 && bit_cnt <= 8 && cyc_cnt == 71 ) ? 1 : 
-					( byte_cnt == 6 && bit_cnt >= 1 && bit_cnt <= 4 && cyc_cnt == 71 ) ? 1 : 0;					
-		y_valid <= 	( byte_cnt == 7 && bit_cnt >= 1 && bit_cnt <= 8 && cyc_cnt == 71 ) ? 1 : 
-					( byte_cnt == 8 && bit_cnt >= 1 && bit_cnt <= 4 && cyc_cnt == 71 ) ? 1 : 0;
-		z_valid <= 	( byte_cnt == 9 && bit_cnt >= 1 && bit_cnt <= 8 && cyc_cnt == 71 ) ? 1 : 
-					( byte_cnt == 10&& bit_cnt >= 1 && bit_cnt <= 4 && cyc_cnt == 71 ) ? 1 : 0;
+		x_valid <= 	( byte_cnt == 6 && bit_cnt >= 1 && bit_cnt <= 8 && cyc_cnt == 71 ) ? 1 : 
+					( byte_cnt == 7 && bit_cnt >= 1 && bit_cnt <= 4 && cyc_cnt == 71 ) ? 1 : 0;					
+		y_valid <= 	( byte_cnt == 8 && bit_cnt >= 1 && bit_cnt <= 8 && cyc_cnt == 71 ) ? 1 : 
+					( byte_cnt == 9 && bit_cnt >= 1 && bit_cnt <= 4 && cyc_cnt == 71 ) ? 1 : 0;
+		z_valid <= 	( byte_cnt == 10&& bit_cnt >= 1 && bit_cnt <= 8 && cyc_cnt == 71 ) ? 1 : 
+					( byte_cnt == 11&& bit_cnt >= 1 && bit_cnt <= 4 && cyc_cnt == 71 ) ? 1 : 0;
 	end
 	
 	// Sda. Open collector
@@ -80,40 +80,42 @@ module accel_master (
 	// Upon reasd, and ack, the sda shoudl be driven 0 during ph1 of bit 9
 	logic read_ack;
 	always_ff @(posedge clk)
-		read_ack <= ( byte_cnt >= 5 && byte_cnt <= 10 && bit_cnt == 9 ) ? 1'b1 : 1'b0;
+		read_ack <= ( byte_cnt >= 6 && byte_cnt <= 11 && bit_cnt == 9 ) ? 1'b1 : 1'b0;
 			
 	// for a stop, the the sda should be driven during ph2 of bit 9 during byte 10
 	logic stop_cmd;
 	always_ff @(posedge clk)
-		stop_cmd <= ( byte_cnt == 11 && bit_cnt == 0 && ph1 ) ? 1'b1 : 1'b0;
+		stop_cmd <= ( byte_cnt == 12 && bit_cnt == 0 && ph1 ) ? 1'b1 : 1'b0;
 
 	logic pre_stop;
 	always_ff @(posedge clk) 
-		pre_stop <= ( byte_cnt == 10 && bit_cnt == 10 ) ? 1'b1 : 1'b0;
+		pre_stop <= ( byte_cnt == 11 && bit_cnt == 10 ) ? 1'b1 : 1'b0;
 	
 	// for a start, the sda should be driven to 0 during ph2 of bit 0
 	logic start_cmd;
 	always_ff @(posedge clk)
-		start_cmd <= ( byte_cnt < 11 && bit_cnt == 0 && ph2 ) ? 1'b1 : 1'b0;
+		start_cmd <= ( byte_cnt < 12 && bit_cnt == 0 && ph2 ) ? 1'b1 : 1'b0;
 	
 	// Otherwise data bits shall be driven durign bytes 0 to 4, msb fist during bits 1 to 8
 	logic [0:7] cmd_write = { 7'h15, 1'b0 };
 	logic [0:7] init_addr = { 8'h0d };
 	logic [0:7] init_data = { 1'b0, /*fsr =*/2'b01, 5'h00 };
-	logic [0:7] cmd_read  = { 7'h15, 1'b1 };
+	logic [0:7] cmd_write2= { 7'h15, 1'b0 };
 	logic [0:7] read_addr = { 8'h03 };
+	logic [0:7] cmd_read  = { 7'h15, 1'b1 };
 	// index into bytges based on bit_cnt
 	logic [2:0] idx;
 	assign idx = bit_cnt - 1;
 	// skip inactive bytes, then per byte mux.
 	logic data;
 	always_ff @(posedge clk)
-		data <= ( byte_cnt > 4 || bit_cnt == 0 || bit_cnt == 9 || bit_cnt == 10 ) ? 1'b0 : // dont drive data otherwise
+		data <= ( byte_cnt > 5 || bit_cnt == 0 || bit_cnt == 9 || bit_cnt == 10 ) ? 1'b0 : // dont drive data otherwise
 				  ( byte_cnt == 0 ) ? !cmd_write[idx] :
 				  ( byte_cnt == 1 ) ? !init_addr[idx] :
 				  ( byte_cnt == 2 ) ? !init_data[idx] :
-				  ( byte_cnt == 3 ) ? !cmd_read[idx] :
-				  ( byte_cnt == 4 ) ? !read_addr[idx] : 1'b0;
+				  ( byte_cnt == 3 ) ? !cmd_write2[idx] :
+				  ( byte_cnt == 4 ) ? !read_addr[idx] : 
+				  ( byte_cnt == 5 ) ? !cmd_read[idx] : 1'b0;
 				  	
 	assign sda_out = 0;
 	logic [1:0] fsr;
@@ -160,8 +162,8 @@ module accel_slave (
 	
 	// count starts, stops, and rising edges
 	logic [1:0] start_cnt;
-	logic [6:0] rise_cnt; // Max 8 * 9 = 72
-	logic [6:0] fall_cnt; // Max 8 * 9 = 72
+	logic [6:0] rise_cnt; // Max 6 * 9
+	logic [6:0] fall_cnt; // Max 6 * 9
 	always_ff @(posedge clk) begin
 		start_cnt <= ( reset ) ? 0 : ( stop ) ? 0 : ( start ) ? start_cnt + 1 : start_cnt;
 		rise_cnt  <= ( reset ) ? 0 : ( start ) ? 0 : ( rise ) ? rise_cnt  + 1 : rise_cnt ;
@@ -174,7 +176,7 @@ module accel_slave (
 	                 y[11:4], 1'b0, y[3:0], 4'b0000, 1'b0,
 	                 z[11:4], 1'b0, z[3:0], 4'b0000, 1'b0 };
 	logic [5:0] idx;
-	assign idx = fall_cnt - 19;
+	assign idx = fall_cnt - 10;
 	logic data;
 	assign data = inbuf[idx];
 	
@@ -185,11 +187,12 @@ module accel_slave (
                    start_cnt == 1 && fall_cnt == 1+1*9+8  ||
                    start_cnt == 1 && fall_cnt == 1+2*9+8  ||
                    start_cnt == 2 && fall_cnt == 1+0*9+8  ||
-                   start_cnt == 2 && fall_cnt == 1+1*9+8  ) ? 1'b1 : 1'b0;
+                   start_cnt == 2 && fall_cnt == 1+1*9+8  ||
+                   start_cnt == 3 && fall_cnt == 1+0*9+8 ) ? 1'b1 : 1'b0;
 
 	// Control when the sda_oe can be driven high with !data
 	logic dval;
-	assign dval = ( start_cnt == 2 && fall_cnt >= 1+2*9 && fall_cnt <= 1+7*9+7 ) ? 1'b1 : 1'b0;
+	assign dval = ( start_cnt == 3 && fall_cnt >= 1+1*9 && fall_cnt <= 1+6*9+7 ) ? 1'b1 : 1'b0;
 
 	// Drive SDA Pin
 	assign sda_oe = ( ack ) ? 1 : ( dval ) ? !data : 0;
@@ -240,18 +243,18 @@ module accel_monitor (
 	end
 
 	// Shift data into regisers MSB first
-	// start_cnt == 2,
+	// start_cnt == 3,
 	// sample sda at rise, 
 	// X rise_cnt = 2*9+;8, 3*9+:4
 	// Y rise_cnt = 4*9+;8, 5*9+:4
 	// Z rise_cnt = 6*9+;8, 7*9+:4
 	logic enx, eny, enz, endat;
-	assign enx = (( start_cnt == 2 && rise && rise_cnt >= 2*9 && rise_cnt < 2*9+8 ) ||
-				  ( start_cnt == 2 && rise && rise_cnt >= 3*9 && rise_cnt < 3*9+4 ) ) ? 1'b1 : 1'b0;
-	assign eny = (( start_cnt == 2 && rise && rise_cnt >= 4*9 && rise_cnt < 4*9+8 ) ||
-				  ( start_cnt == 2 && rise && rise_cnt >= 5*9 && rise_cnt < 5*9+4 ) ) ? 1'b1 : 1'b0;
-	assign enz = (( start_cnt == 2 && rise && rise_cnt >= 6*9 && rise_cnt < 6*9+8 ) ||
-				  ( start_cnt == 2 && rise && rise_cnt >= 7*9 && rise_cnt < 7*9+4 ) ) ? 1'b1 : 1'b0;
+	assign enx = (( start_cnt == 3 && rise && rise_cnt >= 1*9 && rise_cnt < 1*9+8 ) ||
+				  ( start_cnt == 3 && rise && rise_cnt >= 2*9 && rise_cnt < 2*9+4 ) ) ? 1'b1 : 1'b0;
+	assign eny = (( start_cnt == 3 && rise && rise_cnt >= 3*9 && rise_cnt < 3*9+8 ) ||
+				  ( start_cnt == 3 && rise && rise_cnt >= 4*9 && rise_cnt < 4*9+4 ) ) ? 1'b1 : 1'b0;
+	assign enz = (( start_cnt == 3 && rise && rise_cnt >= 5*9 && rise_cnt < 5*9+8 ) ||
+				  ( start_cnt == 3 && rise && rise_cnt >= 6*9 && rise_cnt < 6*9+4 ) ) ? 1'b1 : 1'b0;
 	assign endat = ( bit_cnt <= 7 && rise  ) ? 1'b1 : 1'b0;
 
 	logic [11:0] sregx, sregy, sregz;
