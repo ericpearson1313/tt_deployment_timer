@@ -12,25 +12,11 @@ module deploy_chip
 	// LPC CHIP IO
 	/////////////
 
-	// Input Buttons
-	//input  logic button, // pin 140
 
-	// Output LED/SPK
-	//output logic time_led, // pin 101
-	//output logic fault_led, // pin 99
-	//output logic run_led, // pin 100
-	//output logic pump_out, // pin 124
+	// Accel i2c bidir port, exernal pullups
+	//inout logic sda,  // pin ??
+	//inout logic scl,  // pin ??
 
-	// External Current Control Input
-	//input	 logic setup_sw,  // pin 62 
-	//input  logic period_sw,  // pin 135
-	//input  logic timeout_sw, // pin 66 
-
-	// ADC I/O (spi)
-	//output logic adc_ncs,  // pin 132
-	//output logic adc_clk,  // pin 105
-	//input  logic adc_miso, // pin 106
-	//output logic adc_mosi, // pin 65 
 
 	////////////
 	// DEBUG IO
@@ -71,12 +57,25 @@ module deploy_chip
 	logic 		dump			;
 	logic 		deploy		;
 	logic 		status_led	;
+
 	logic 		sda_in		;
 	logic 		sda_oe		;
 	logic 		sda_out		;
 	logic 		scl_in		;
 	logic 		scl_oe		;
 	logic 		scl_out		;
+	
+
+	
+	// Trisate I/Os I2c bus
+	//ALT_IOBUF i_sda(.i(sda_in),.oe(sda_oe),.o(sda_out),.io(sda));
+	//ALT_IOBUF i_scl(.i(scl_in),.oe(scl_oe),.o(scl_out),.io(scl));
+
+	// Hook to simualted port
+	logic sda_soe;
+	assign scl_in = ( scl_oe ) ? 0 : 1;
+	assign sda_in = ( sda_oe || sda_soe ) ? 0 : 1;
+	
 
 	logic [4:0] key; // keypad, bit 4 indicates pressed
 
@@ -118,7 +117,7 @@ module deploy_chip
 	// AIN LED Display with counter
 	assign anain[4:1] = 0; // active low leds
 
-	logic [24:0] count;
+	logic [31:0] count;
 	always @(posedge clk) begin
 		count <= count + 1;
 	end
@@ -197,7 +196,7 @@ module deploy_chip
 
 	// Test Inputs driving.
 	always_comb begin
-		dip_sw = 3'd1111; 
+		dip_sw = 4'd1111; 
 		cont_sense = 0;
 
 		// Test 1: do nothing
@@ -209,13 +208,53 @@ module deploy_chip
 	// System Model
   	/////////////////////
 
-
+	// Wire up an accel sim model 
+	wire [11:0] x, y, z; // accell inputs into model
+	accel_slave i_accel_sim (
+    	.clk(clk),
+    	.reset(reset),
+		.en( 1 ),
+    	.sda( sda_in )     ,
+    	.sda_oe( sda_soe )     ,
+    	.scl( scl_in ) ,
+    	.x( x ),
+    	.y( y ),
+    	.z( z )
+	);
+	
+	assign x = count[27-:12];
+	assign y = count[25-:12];
+	assign z = count[28-:12];
 
   	/////////////////////
 	// Bus Monitor
   	/////////////////////
 
 
+	wire [11:0] xm, ym, zm; // monitor outputs
+	wire strobe, data_strobe;
+	wire [7:0] data;
+	accel_monitor i_accel_mon (
+    	.clk(clk),
+    	.reset(reset),
+		.en( 1 ),
+    	.sda( sda_in ) , // Monitor pin inputs
+    	.scl( scl_in ) ,
+		.strobe( strobe ),
+    	.x( xm ),
+    	.y( ym ),
+    	.z( zm ),
+		.data( data ),
+		.data_strobe( data_strobe )
+	);
+
+	// Big buffer of last 11 byte
+	// for display
+	logic [10:0][7:0] buf11;
+	always_ff @(posedge clk)
+		buf11 <= ( data_strobe ) ? { buf11[9:0], data } : buf11;
+
+	
 	
 	//////////////////////////
 	// Local calc on Monitors
@@ -225,10 +264,10 @@ module deploy_chip
 	
 	// Scope monitor probes 
 	logic signed [4:0][11:0] probe;
-	assign probe[0] = fpga_probe;		// x
-	assign probe[1] = fpga_probe2;	// y
-	assign probe[2] = fpga_probe3; 	// z
-	assign probe[3] = 0;
+	assign probe[0] = xm;	// x
+	assign probe[1] = ym;	// y
+	assign probe[2] = zm; 	// z
+	assign probe[3] = fpga_probe;
 	assign probe[4] = { 2'h0, dip_sw[3:0], 6'h00 }; 
 
 	
@@ -254,11 +293,11 @@ module deploy_chip
 
 	// monitor 8x chip I/O pins
 
-	// create 15 Khz strobe 
-	logic [11:0] strobe_count;
+	// create 100 Hz strobe 
+	logic [19:0] strobe_count;
 	always_ff @(posedge clk) begin
-		strobe_count <= ( strobe_count == 3199 ) ? 0 : strobe_count + 1;
-		mad_strobe <= ( strobe_count == 3199 ) ? 1'b1 : 1'b0;
+		strobe_count <= ( strobe_count == 480000-1 ) ? 0 : strobe_count + 1;
+		mad_strobe <= ( strobe_count == 480000-1 ) ? 1'b1 : 1'b0;
 	end
 	
 	// monitor 8x chip I/O pins
@@ -893,25 +932,26 @@ module deploy_chip
 	//string_overlay #(.LEN(1)) _res2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d110),.y('d5), .out( res_str[2] ), .str(".") );
 	//hex_overlay    #(.LEN(1)) _res3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char)    , .x('d111),.y('d5), .out( res_str[3] ), .in( { igniter_res[4:1] ^ 4'hF } ) );
 	//string_overlay #(.LEN(11))_res4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d117),.y('d5), .out( res_str[4] ), .str("(3E.E=Open)") );
+	hex_overlay    #(.LEN(22)) _res1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char)    , .x('d90),.y('d13), .out( res_str[1] ), .in( buf11 ) );
 
 	
 	// Port Names
 	logic [5:0] in_str;
-   string_overlay #(.LEN(3)) _in0 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h47),.y('h01), .out( in_str[0]), .str("Ch0") );
-	string_overlay #(.LEN(3)) _in1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h47),.y('h03), .out( in_str[1]), .str("Ch1") );
-	string_overlay #(.LEN(4)) _in2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h46),.y('h05), .out( in_str[2]), .str("Rms0") );
-	string_overlay #(.LEN(4)) _in3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h46),.y('h07), .out( in_str[3]), .str("Rms1") );
-	string_overlay #(.LEN(5)) _in4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h09), .out( in_str[4]), .str("fpga0") );
-	string_overlay #(.LEN(5)) _in5 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h0B), .out( in_str[5]), .str("fpga1") );
+   string_overlay #(.LEN(4)) _in0 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h47),.y('h01), .out( in_str[0]), .str("Xmon") );
+	string_overlay #(.LEN(4)) _in1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h47),.y('h03), .out( in_str[1]), .str("Ymon") );
+	string_overlay #(.LEN(4)) _in2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h46),.y('h05), .out( in_str[2]), .str("Zmon") );
+	string_overlay #(.LEN(4)) _in3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h46),.y('h07), .out( in_str[3]), .str("fpga") );
+	string_overlay #(.LEN(5)) _in4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h09), .out( in_str[4]), .str("fpga2") );
+	string_overlay #(.LEN(5)) _in5 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h0B), .out( in_str[5]), .str("fpga3") );
 	
 	// 12bit hex overlays(4)
 	logic [5:0] hex_str;
-	//hex_overlay #(.LEN(3)) _hex0 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h01), .out( hex_str[0]), .in( dout0 ) );
-	//hex_overlay #(.LEN(3)) _hex1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h03), .out( hex_str[1]), .in( dout1 ) );
-	//hex_overlay #(.LEN(8)) _hex2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h05), .out( hex_str[2]), .in( rms_hold[0] ) );
-	//hex_overlay #(.LEN(8)) _hex3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h07), .out( hex_str[3]), .in( rms_hold[1] ) );
-	//hex_overlay #(.LEN(8)) _hex4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h09), .out( hex_str[4]), .in( fpga_probe ) );
-	//hex_overlay #(.LEN(8)) _hex5 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h0B), .out( hex_str[5]), .in( fpga_probe2 ) );
+	hex_overlay #(.LEN(3)) _hex0 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h01), .out( hex_str[0]), .in( xm ) );
+	hex_overlay #(.LEN(3)) _hex1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h03), .out( hex_str[1]), .in( ym ) );
+	hex_overlay #(.LEN(8)) _hex2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h05), .out( hex_str[2]), .in( zm ) );
+	hex_overlay #(.LEN(8)) _hex3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h07), .out( hex_str[3]), .in( fpga_probe ) );
+	hex_overlay #(.LEN(8)) _hex4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h09), .out( hex_str[4]), .in( fpga_probe2 ) );
+	hex_overlay #(.LEN(8)) _hex5 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h0B), .out( hex_str[5]), .in( fpga_probe3 ) );
 					
 	// dump binary	values	
 	logic [3:0] bin_str;
