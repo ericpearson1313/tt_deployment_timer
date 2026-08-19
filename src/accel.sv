@@ -71,8 +71,8 @@ module accel_master (
 	// Sda. Open collector
 	// Has to generate the write data, read data tristates, start and stops.
 	// 11 bytes
-	// 0:  { 7'h10, 1'b0 }, 1: { 8'h0d }, 2: { 1'h0, fsr[1:0], 5'h0 } 
-	// 3:  { 7'h10, 1'b1 }, 4: { 8'h03 },  // setup to read the data regs
+	// 0:  { 7'h15, 1'b0 }, 1: { 8'h0d }, 2: { 1'h0, fsr[1:0], 5'h0 } 
+	// 3:  { 7'h15, 1'b1 }, 4: { 8'h03 },  // setup to read the data regs
 	// 5:  { 8'bzzzzzzzz }, 6: { 8'bzzzzxxxx}  // read x direcxiton msb fist [11:4], [3:0]
 	// 7:  { 8'bzzzzzzzz }, 8: { 8'bzzzzxxxx}  // read y direcxiton
 	// 9:  { 8'bzzzzzzzz }, 10:{ 8'bzzzzxxxx}  // read z direcxiton, finish with stop
@@ -97,10 +97,10 @@ module accel_master (
 		start_cmd <= ( byte_cnt < 11 && bit_cnt == 0 && ph2 ) ? 1'b1 : 1'b0;
 	
 	// Otherwise data bits shall be driven durign bytes 0 to 4, msb fist during bits 1 to 8
-	logic [0:7] cmd_write = { 7'h10, 1'b0 };
+	logic [0:7] cmd_write = { 7'h15, 1'b0 };
 	logic [0:7] init_addr = { 8'h0d };
 	logic [0:7] init_data = { 1'b0, /*fsr =*/2'b01, 5'h00 };
-	logic [0:7] cmd_read  = { 7'h10, 1'b1 };
+	logic [0:7] cmd_read  = { 7'h15, 1'b1 };
 	logic [0:7] read_addr = { 8'h03 };
 	// index into bytges based on bit_cnt
 	logic [2:0] idx;
