@@ -156,6 +156,9 @@ set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_RO
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
 set_global_assignment -name VERILOG_SHOW_LMF_MAPPING_MESSAGES OFF
 set_global_assignment -name VERILOG_MACRO "__ALTERA_STD__=<None>"
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to scl
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sda
+set_global_assignment -name VERILOG_FILE lib/ioe_pad.v
 set_global_assignment -name SYSTEMVERILOG_FILE ../src/accel.sv
 set_global_assignment -name SDC_FILE deploy_chip.sdc
 set_global_assignment -name QIP_FILE ufm_flash/synthesis/ufm_flash.qip
@@ -176,6 +179,6 @@ set_global_assignment -name SYSTEMVERILOG_FILE lib/altera_gpio_lite.sv
 set_global_assignment -name VERILOG_FILE lib/ioe_pads7.v
 set_global_assignment -name QIP_FILE lib/trial_pll.qip
 set_global_assignment -name SYSTEMVERILOG_FILE pump_chip.sv
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to scl
-set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sda
+set_location_assignment PIN_62 -to scl
+set_location_assignment PIN_140 -to sda
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

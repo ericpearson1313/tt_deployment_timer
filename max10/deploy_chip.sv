@@ -14,8 +14,8 @@ module deploy_chip
 
 
 	// Accel i2c bidir port, exernal pullups
-	//inout logic sda,  // pin ??
-	//inout logic scl,  // pin ??
+	inout sda,  // pin ??
+	inout scl,  // pin ??
 
 
 	////////////
@@ -68,13 +68,13 @@ module deploy_chip
 
 	
 	// Trisate I/Os I2c bus
-	//ALT_IOBUF i_sda(.i(sda_in),.oe(sda_oe),.o(sda_out),.io(sda));
-	//ALT_IOBUF i_scl(.i(scl_in),.oe(scl_oe),.o(scl_out),.io(scl));
-
+	ioe_pad i_sda(.din(sda_out),.dout(sda_in),.oe(sda_oe),.pad_io(sda));
+	ioe_pad i_scl(.din(scl_out),.dout(scl_in),.oe(scl_oe),.pad_io(scl));
+	
 	// Hook to simualted port
-	logic sda_soe;
-	assign scl_in = ( scl_oe ) ? 0 : 1;
-	assign sda_in = ( sda_oe || sda_soe ) ? 0 : 1;
+	//logic sda_soe;
+	//assign scl_in = ( scl_oe ) ? 0 : 1;
+	//assign sda_in = ( sda_oe || sda_soe ) ? 0 : 1;
 	
 
 	logic [4:0] key; // keypad, bit 4 indicates pressed
@@ -209,22 +209,21 @@ module deploy_chip
   	/////////////////////
 
 	// Wire up an accel sim model 
-	wire [11:0] x, y, z; // accell inputs into model
-	accel_slave i_accel_sim (
-    	.clk(clk),
-    	.reset(reset),
-		.en( 1 ),
-    	.sda( sda_in )     ,
-    	.sda_oe( sda_soe )     ,
-    	.scl( scl_in ) ,
-    	.x( x ),
-    	.y( y ),
-    	.z( z )
-	);
-	
-	assign x = count[27-:12];
-	assign y = count[25-:12];
-	assign z = count[28-:12];
+	//wire [11:0] x, y, z; // accell inputs into model
+	//accel_slave i_accel_sim (
+   // 	.clk(clk),
+   // 	.reset(reset),
+	//	.en( 1 ),
+   // 	.sda( sda_in )     ,
+   // 	.sda_oe( sda_soe )     ,
+   // 	.scl( scl_in ) ,
+   // 	.x( x ),
+   // 	.y( y ),
+   // 	.z( z )
+	//);
+	//assign x = count[27-:12];
+	//assign y = count[25-:12];
+	//assign z = count[28-:12];
 
   	/////////////////////
 	// Bus Monitor
@@ -260,8 +259,6 @@ module deploy_chip
 	// Local calc on Monitors
 	//////////////////////////
 
-
-	
 	// Scope monitor probes 
 	logic signed [4:0][11:0] probe;
 	assign probe[0] = xm;	// x
