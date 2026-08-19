@@ -125,9 +125,10 @@ module accel_slave (
 	// System
 	input  logic clk,
 	input  logic reset,
+	input  logic en,
 	// I2C bus
     input  logic sda     ,
-    output logic sda_oe     ,
+    output logic sda_oe  ,
     input  logic scl     ,
 	// inner interface (from tb/model)
 	// values returend when reading x,y,z.
@@ -135,6 +136,54 @@ module accel_slave (
 	input  logic [11:0] y	,
 	input  logic [11:0] z
 );
+
+	// Deterine events
+	logic sda_del, scl_del;
+	logic start, stop, rise, fall; // edges to detect
+	always_ff @(posedge clk) begin
+		sda_del <= ( reset ) ? 1 : ( en ) ? sda : sda_del;
+		scl_del <= ( reset ) ? 1 : ( en ) ? scl : scl_del;
+		start <= en & scl & scl_del & !sda &  sda_del;
+		stop  <= en & scl & scl_del &  sda & !sda_del;
+		rise <=  en & scl & !scl_del;
+		fall <=  en & !scl & scl_del;
+	end
+	
+	// count starts, stops, and rising edges
+	logic [1:0] start_cnt;
+	logic [6:0] rise_cnt; // Max 8 * 9 = 72
+	logic [6:0] fall_cnt; // Max 8 * 9 = 72
+	always_ff @(posedge clk) begin
+		start_cnt <= ( reset ) ? 0 : ( stop ) ? 0 : ( start ) ? start_cnt + 1 : start_cnt;
+		rise_cnt  <= ( reset ) ? 0 : ( start ) ? 0 : ( rise ) ? rise_cnt  + 1 : rise_cnt ;
+		fall_cnt  <= ( reset ) ? 0 : ( start ) ? 0 : ( fall ) ? fall_cnt  + 1 : fall_cnt ;
+	end
+
+	// Really just want to index into a bit array indexed by fall count
+	logic [0:6*9-1] inbuf;
+	assign inbuf = { x[11:4], 1'b0, x[3:0], 4'b0000, 1'b0,
+	                 y[11:4], 1'b0, y[3:0], 4'b0000, 1'b0,
+	                 z[11:4], 1'b0, z[3:0], 4'b0000, 1'b0 };
+	logic [5:0] idx;
+	assign idx = fall_cnt - 19;
+	logic data;
+	assign data = inbuf[idx];
+	
+	// Control generation of acks for all 3 bytes of first msg
+	// and first 2 of 8 bytes of 2nd message
+	logic ack;
+	assign ack = ( start_cnt == 1 && fall_cnt == 1+0*9+7  ||
+                   start_cnt == 1 && fall_cnt == 1+1*9+7  ||
+                   start_cnt == 1 && fall_cnt == 1+2*9+7  ||
+                   start_cnt == 2 && fall_cnt == 1+0*9+7  ||
+                   start_cnt == 2 && fall_cnt == 1+1*9+7  ) ? 1'b1 : 1'b0;
+
+	// Control when the sda_oe can be driven high with !data
+	logic dval;
+	assign dval = ( start_cnt == 2 && fall_cnt >= 1+2*9 && fall_cnt <= 1+7*9+6 ) ? 1'b1 : 1'b0;
+
+	// Drive SDA Pin
+	assign sda_oe = ( ack ) ? 1 : ( dval ) ? !data : 0;
 
 endmodule
 
@@ -158,13 +207,14 @@ module accel_monitor (
 
 	// Deterine events
 	logic sda_del, scl_del;
-	logic start, stop, rise; // edges to detect
+	logic start, stop, rise, fall; // edges to detect
 	always_ff @(posedge clk) begin
 		sda_del <= ( reset ) ? 1 : ( en ) ? sda : sda_del;
 		scl_del <= ( reset ) ? 1 : ( en ) ? scl : scl_del;
 		start <= en & scl & scl_del & !sda &  sda_del;
 		stop  <= en & scl & scl_del &  sda & !sda_del;
 		rise <=  en & scl & !scl_del;
+		fall <=  en & !scl & scl_del;
 	end
 	
 	// count starts, stops, and rising edges

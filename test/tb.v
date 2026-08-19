@@ -80,6 +80,7 @@ module tb ();
 	accel_slave i_accel_sim (
     	.clk(clk),
     	.reset(reset),
+		.en( 1 ),
     	.sda( sda )     ,
     	.sda_oe( sda_soe )     ,
     	.scl( scl ) ,
@@ -87,12 +88,16 @@ module tb ();
     	.y( y ),
     	.z( z )
 	);
+	assign x = 12'h7e1;
+	assign y = 12'h3c2;
+	assign z = 12'h184;
 
 	// WIre up a accel monitor
 	wire [11:0] xm, ym, zm; // accell inputs into model
 	accel_monitor i_accel_mon (
     	.clk(clk),
     	.reset(reset),
+		.en( 1 ),
     	.sda( sda ) ,
     	.scl( scl ) ,
 		.strobe( ),
