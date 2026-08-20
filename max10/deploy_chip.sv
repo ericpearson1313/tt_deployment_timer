@@ -14,10 +14,13 @@ module deploy_chip
 
 
 	// Accel i2c bidir port, exernal pullups
-	inout sda,  // pin ??
-	inout scl,  // pin ??
+	inout sda,  // pin 140
+	inout scl,  // pin 62
 
-
+	// Speaker
+	output logic speaker, // pin 65
+	output logic speaker_n, // 132
+	
 	////////////
 	// DEBUG IO
 	////////////
@@ -52,7 +55,8 @@ module deploy_chip
 	logic [3:0] dip_sw		;
 	logic 		cont_sense	;
 	logic 		cont_enable	;
-	logic 		speaker		;
+	//logic 		speaker		;
+	//logic		speaker_n	;
 	logic 		charge		;
 	logic 		dump			;
 	logic 		deploy		;
@@ -78,6 +82,38 @@ module deploy_chip
 	
 
 	logic [4:0] key; // keypad, bit 4 indicates pressed
+	
+	// Speaker (piezo test)
+
+	localparam NOTE_C8 = 13'h1665; // C8 — 4186 Hz 
+	localparam NOTE_D8 = 13'h13F5; // D8 — 4698 Hz
+	localparam NOTE_E8 = 13'h11C7; // E8 — 5274 Hz
+	localparam NOTE_F8 = 13'h10C7; // F8 — 5588 Hz
+	localparam NOTE_G8 = 13'h0EF3; // G8 — 6272 Hz
+	
+	logic [12:0] tone_cnt;
+	logic cont_tone;
+	logic spk_en, spk_toggle;
+
+	always @(posedge clk) begin
+		if( tone_cnt == 0 ) begin
+			spk_toggle <= !spk_toggle;
+			{spk_en, tone_cnt}<= ( key == 5'h11 ) ? { 1'b1, NOTE_C8 } :
+										( key == 5'h13 ) ? { 1'b1, NOTE_D8 } :
+										( key == 5'h15 ) ? { 1'b1, NOTE_E8 } :
+										( key == 5'h17 ) ? { 1'b1, NOTE_F8 } :
+										( key == 5'h19 ) ? { 1'b1, NOTE_G8 } : 0;
+		end else begin
+			tone_cnt <= tone_cnt - 1;
+			spk_en <= spk_en;
+			spk_toggle <= spk_toggle;
+		end
+	end
+	
+	assign speaker = spk_toggle & spk_en ; 
+	assign speaker_n = !spk_toggle & spk_en ;
+
+	
 
 	// PLL (only 1 PLL in E144 package!)
 
@@ -151,7 +187,7 @@ module deploy_chip
 		.cont_sense	( cont_sense	),
 		// Chip Outputs
 		.cont_enable( cont_enable	),
-		.speaker		( speaker		),
+		.speaker		( ),//speaker		),
 		.charge		( charge			),
 		.dump			( dump			),
 		.deploy		( deploy			),
@@ -934,10 +970,10 @@ module deploy_chip
 	
 	// Port Names
 	logic [5:0] in_str;
-   string_overlay #(.LEN(4)) _in0 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h47),.y('h01), .out( in_str[0]), .str("Xmon") );
-	string_overlay #(.LEN(4)) _in1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h47),.y('h03), .out( in_str[1]), .str("Ymon") );
-	string_overlay #(.LEN(4)) _in2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h46),.y('h05), .out( in_str[2]), .str("Zmon") );
-	string_overlay #(.LEN(4)) _in3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h46),.y('h07), .out( in_str[3]), .str("fpga") );
+   string_overlay #(.LEN(4)) _in0 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h01), .out( in_str[0]), .str("Xmon") );
+	string_overlay #(.LEN(4)) _in1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h03), .out( in_str[1]), .str("Ymon") );
+	string_overlay #(.LEN(4)) _in2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h05), .out( in_str[2]), .str("Zmon") );
+	string_overlay #(.LEN(4)) _in3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h07), .out( in_str[3]), .str("fpga") );
 	string_overlay #(.LEN(5)) _in4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h09), .out( in_str[4]), .str("fpga2") );
 	string_overlay #(.LEN(5)) _in5 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h45),.y('h0B), .out( in_str[5]), .str("fpga3") );
 	
@@ -945,10 +981,10 @@ module deploy_chip
 	logic [5:0] hex_str;
 	hex_overlay #(.LEN(3)) _hex0 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h01), .out( hex_str[0]), .in( xm ) );
 	hex_overlay #(.LEN(3)) _hex1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h03), .out( hex_str[1]), .in( ym ) );
-	hex_overlay #(.LEN(8)) _hex2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h05), .out( hex_str[2]), .in( zm ) );
-	hex_overlay #(.LEN(8)) _hex3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h07), .out( hex_str[3]), .in( fpga_probe ) );
-	hex_overlay #(.LEN(8)) _hex4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h09), .out( hex_str[4]), .in( fpga_probe2 ) );
-	hex_overlay #(.LEN(8)) _hex5 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h0B), .out( hex_str[5]), .in( fpga_probe3 ) );
+	hex_overlay #(.LEN(3)) _hex2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h05), .out( hex_str[2]), .in( zm ) );
+	hex_overlay #(.LEN(3)) _hex3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h07), .out( hex_str[3]), .in( fpga_probe ) );
+	hex_overlay #(.LEN(3)) _hex4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h09), .out( hex_str[4]), .in( fpga_probe2 ) );
+	hex_overlay #(.LEN(3)) _hex5 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char), .x('h4B),.y('h0B), .out( hex_str[5]), .in( fpga_probe3 ) );
 					
 	// dump binary	values	
 	logic [3:0] bin_str;
@@ -959,14 +995,14 @@ module deploy_chip
 
    // Text legend
    logic [7:0] leg_str;
-   string_overlay #(.LEN(8)) i_leg00 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+0), .out( leg_str[0] ), .str("cont_sns") );
-   string_overlay #(.LEN(8)) i_leg01 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+1), .out( leg_str[1] ), .str("cont_en ") );
-   string_overlay #(.LEN(8)) i_leg02 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+2), .out( leg_str[2] ), .str("speaker ") );
-   string_overlay #(.LEN(8)) i_leg03 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+3), .out( leg_str[3] ), .str("charge  ") );
-   string_overlay #(.LEN(8)) i_leg04 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+4), .out( leg_str[4] ), .str("dump    ") );
-   string_overlay #(.LEN(8)) i_leg05 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+5), .out( leg_str[5] ), .str("deploy  ") );
-   string_overlay #(.LEN(8)) i_leg06 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+6), .out( leg_str[6] ), .str("sts_led ") );
-   string_overlay #(.LEN(8)) i_leg07 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+7), .out( leg_str[7] ), .str("        ") );
+   string_overlay #(.LEN(8)) i_leg00 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+7), .out( leg_str[0] ), .str("cont_sns") );
+   string_overlay #(.LEN(8)) i_leg01 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+6), .out( leg_str[1] ), .str("cont_en ") );
+   string_overlay #(.LEN(8)) i_leg02 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+5), .out( leg_str[2] ), .str("speaker ") );
+   string_overlay #(.LEN(8)) i_leg03 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+4), .out( leg_str[3] ), .str("charge  ") );
+   string_overlay #(.LEN(8)) i_leg04 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+3), .out( leg_str[4] ), .str("dump    ") );
+   string_overlay #(.LEN(8)) i_leg05 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+2), .out( leg_str[5] ), .str("deploy  ") );
+   string_overlay #(.LEN(8)) i_leg06 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+1), .out( leg_str[6] ), .str("sts_led ") );
+   string_overlay #(.LEN(8)) i_leg07 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d3),.y('d50+0), .out( leg_str[7] ), .str("        ") );
 	
 	// Merge overlays
 	logic overlay;
