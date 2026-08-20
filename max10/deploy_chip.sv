@@ -249,9 +249,9 @@ module deploy_chip
 
 	// Big buffer of last 11 byte
 	// for display
-	logic [10:0][7:0] buf11;
+	logic [11:0][7:0] buf11;
 	always_ff @(posedge clk)
-		buf11 <= ( data_strobe ) ? { buf11[9:0], data } : buf11;
+		buf11 <= ( data_strobe ) ? { buf11[10:0], data } : buf11;
 
 	
 	
@@ -929,7 +929,7 @@ module deploy_chip
 	//string_overlay #(.LEN(1)) _res2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d110),.y('d5), .out( res_str[2] ), .str(".") );
 	//hex_overlay    #(.LEN(1)) _res3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char)    , .x('d111),.y('d5), .out( res_str[3] ), .in( { igniter_res[4:1] ^ 4'hF } ) );
 	//string_overlay #(.LEN(11))_res4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d117),.y('d5), .out( res_str[4] ), .str("(3E.E=Open)") );
-	hex_overlay    #(.LEN(22)) _res1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char)    , .x('d90),.y('d13), .out( res_str[1] ), .in( buf11 ) );
+	hex_overlay    #(.LEN(24)) _res1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char)    , .x('d90),.y('d13), .out( res_str[1] ), .in( buf11 ) );
 
 	
 	// Port Names
