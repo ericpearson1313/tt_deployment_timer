@@ -37,13 +37,12 @@ module accel_master (
 		bit_cnt <= ( reset ) ? 0 : ( cyc_cnt == 119 ) ? (( bit_cnt == 10 ) ? 0 : bit_cnt + 1 ) : bit_cnt;
 		
 	//363 byte counter ~= 100 Hz
+	logic [8:0] byte_limit = 363;
 	logic [8:0] byte_cnt;
 	always @(posedge clk) 
 		byte_cnt <= ( reset ) ? 0 : ( cyc_cnt == 119 && bit_cnt == 10 ) ? 
-			(( byte_cnt == 363 ) ? 0 : byte_cnt + 1 ) : byte_cnt;
+			(( byte_cnt == byte_limit ) ? 0 : byte_cnt + 1 ) : byte_cnt;
 		
-	
-
 	// Generate sampel flag at 100Hz after the last sampel bit read.
 	always @(posedge clk) 
 		sample <= ( cyc_cnt == 119 && bit_cnt == 10 && byte_cnt == 11 ) ? 1'b1 : 1'b0;

@@ -149,7 +149,7 @@ module ldt_core (
 	// Dump = safe
 	assign safe = ( timer < 25 ) ? 1'b1 : 1'b0;
 	always @(posedge clk)
-		dump <= safe;
+		dump <= ( timer < 25 || timer >= end_time ) ? 1'b1 : 1'b0;
 
 	// PreCharge (0.5 sec)
 	always @(posedge clk)

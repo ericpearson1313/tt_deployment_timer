@@ -27,8 +27,10 @@ module tb ();
   // Replace tt_um_example with your module name:
 	wire sda;
 	wire scl;
+	wire [3:0] dip_sw;
+	wire cont_sense;
   	tt_um_deploy_timer user_project (
-      .ui_in  (ui_in),    // Dedicated inputs
+      .ui_in  ( { ui_in[7:5], cont_sense, dip_sw[3:0] } ),    // Dedicated inputs
       .uo_out (uo_out),   // Dedicated outputs
       .uio_in ( { uio_in[7:2], scl, sda } ),   // IOs: Input path
       .uio_out(uio_out),  // IOs: Output path
@@ -50,11 +52,7 @@ module tb ();
 	assign scl_out= uio_out[1];
 	assign scl_in = scl;
 
-	wire [3:0] dip_sw;
-	assign dip_sw = ui_in[3:0];
-
-	wire cont_sense, cont_enable;
-	assign cont_sense  = ui_in[4]; // activehigh
+	wire cont_enable;
 	assign cont_enable = uo_out[0];; // active low
 
 	wire speaker, speaker_n, deploy, dump, charge;
