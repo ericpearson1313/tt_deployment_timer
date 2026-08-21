@@ -85,33 +85,34 @@ module deploy_chip
 	
 	// Speaker (piezo test)
 
-	//localparam NOTE_C8 = 13'h1665; // C8 — 4186 Hz 
-	//localparam NOTE_D8 = 13'h13F5; // D8 — 4698 Hz
-	//localparam NOTE_E8 = 13'h11C7; // E8 — 5274 Hz
-	//localparam NOTE_F8 = 13'h10C7; // F8 — 5588 Hz
-	//localparam NOTE_G8 = 13'h0EF3; // G8 — 6272 Hz
-	//
-	//logic [12:0] tone_cnt;
-	//logic cont_tone;
-	//logic spk_en, spk_toggle;
-	//
-	//always @(posedge clk) begin
-	//	if( tone_cnt == 0 ) begin
-	//		spk_toggle <= !spk_toggle;
-	//		{spk_en, tone_cnt}<= ( key == 5'h11 ) ? { 1'b1, NOTE_C8 } :
-	//									( key == 5'h13 ) ? { 1'b1, NOTE_D8 } :
-	//									( key == 5'h15 ) ? { 1'b1, NOTE_E8 } :
-	//									( key == 5'h17 ) ? { 1'b1, NOTE_F8 } :
-	//									( key == 5'h19 ) ? { 1'b1, NOTE_G8 } : 0;
-	//	end else begin
-	//		tone_cnt <= tone_cnt - 1;
-	//		spk_en <= spk_en;
-	//		spk_toggle <= spk_toggle;
-	//	end
-	//end
-	//
-	//assign speaker = spk_toggle & spk_en ; 
-	//assign speaker_n = !spk_toggle & spk_en ;
+	localparam NOTE_C8 = 13'h1665; // C8 — 4186 Hz 
+	localparam NOTE_D8 = 13'h13F5; // D8 — 4698 Hz
+	localparam NOTE_E8 = 13'h11C7; // E8 — 5274 Hz
+	localparam NOTE_F8 = 13'h10C7; // F8 — 5588 Hz
+	localparam NOTE_G8 = 13'h0EF3; // G8 — 6272 Hz
+	
+	logic [12:0] tone_cnt;
+	logic cont_tone;
+	logic spk_en, spk_toggle;
+	
+	always @(posedge clk) begin
+		if( tone_cnt == 0 ) begin
+			spk_toggle <= !spk_toggle;
+			{spk_en, tone_cnt}<= ( key == 5'h11 ) ? { 1'b1, NOTE_C8 } :
+										( key == 5'h13 ) ? { 1'b1, NOTE_D8 } :
+										( key == 5'h15 ) ? { 1'b1, NOTE_E8 } :
+										( key == 5'h17 ) ? { 1'b1, NOTE_F8 } :
+										( key == 5'h19 ) ? { 1'b1, NOTE_G8 } : 0;
+		end else begin
+			tone_cnt <= tone_cnt - 1;
+			spk_en <= spk_en;
+			spk_toggle <= spk_toggle;
+		end
+	end
+	
+	logic ldt_speaker, ldt_speaker_n;
+	assign speaker = ldt_speaker | ( spk_toggle & spk_en ); 
+	assign speaker_n = ldt_speaker_n | ( !spk_toggle & spk_en );
 
 	
 
@@ -187,8 +188,8 @@ module deploy_chip
 		.cont_sense	( cont_sense	),
 		// Chip Outputs
 		.cont_enable( cont_enable	),
-		.speaker		( speaker		),
-		.speaker_n	( speaker_n    ),
+		.speaker		( ldt_speaker		),
+		.speaker_n	( ldt_speaker_n    ),
 		.charge		( charge			),
 		.dump			( dump			),
 		.deploy		( deploy			),
@@ -234,7 +235,7 @@ module deploy_chip
 	// Test Inputs driving.
 	always_comb begin
 		dip_sw = 4'd1111; 
-		cont_sense = 0;
+		cont_sense = ( key == 5'h10 ) ? 1'b1 : 1'b0;
 
 		// Test 1: do nothing
 		
