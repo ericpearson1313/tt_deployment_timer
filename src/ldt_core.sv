@@ -87,6 +87,7 @@ module ldt_core (
 		audio_cnt <= ( reset ) ? 0 : ( sample ) ? ( ( audio_cnt == 99 ) ? 0 : audio_cnt + 1 ) : audio_cnt;
 
 	// Continuity
+	logic safe;
 	always_ff @(posedge clk)
 		cont_enable <= ( safe && audio_cnt >=9 && audio_cnt < 15 ) ? 1'b1 : 1'b0;
 	
@@ -110,7 +111,6 @@ module ldt_core (
 	logic [12:0] tone_cnt;
 	logic cont_tone;
 	logic spk_en, spk_toggle;
-	logic safe;
 	logic done;
 
 	always @(posedge clk) begin

@@ -29,12 +29,11 @@ async def test_project(dut):
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
-    dut.rst_n.value = 1
-
     #LDT chip inputs
     dut.dip_sw.value = 15; # 4 active low switches
     dut.cont_sense.value = 0; # active high continuity
+    await ClockCycles(dut.clk, 10)
+    dut.rst_n.value = 1
 
     #some data for the first sample
     dut.x.value = 1111;
