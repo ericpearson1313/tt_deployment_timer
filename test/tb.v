@@ -57,13 +57,14 @@ module tb ();
 	assign cont_sense  = ui_in[4]; // activehigh
 	assign cont_enable = uo_out[0];; // active low
 
-	wire speaker, deploy, dump, charge;
-	assign speaker = uo_out[1]; // active low
-	assign deploy  = uo_out[2]; // active low
-	assign dump    = uo_out[3]; // active low
-	assign charge  = uo_out[4]; // active low
+	wire speaker, speaker_n, deploy, dump, charge;
 	wire status_led;
-	assign status_led = uo_out[5];
+	assign speaker = uo_out[1]; // active hi
+	assign speaker = uo_out[2]; // active zero or complementary.
+	assign deploy  = uo_out[3]; // active hi
+	assign dump    = uo_out[4]; // active hi
+	assign charge  = uo_out[5]; // active hi
+	assign status_led = uo_out[6]; // active hi
 
 	wire reset;
 	assign reset = !rst_n;

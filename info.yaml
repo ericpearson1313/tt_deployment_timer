@@ -37,11 +37,11 @@ pinout:
   # Outputs
   uo[0]: "cont_enable" # act low cont measurement enable
   uo[1]: "speaker" # output to 4kz-6khz piezo
-  uo[2]: "deploy" # deploy fet gate driver
-  uo[3]: "dump" # dump fet gate driver
-  uo[4]: "charge" # 30V charge enable
-  uo[5]: "status_led" # Active high status led
-  uo[6]: ""
+  uo[2]: "speaker_n" # output to 4kz-6khz piezo
+  uo[3]: "deploy" # deploy fet gate driver
+  uo[4]: "dump" # dump fet gate driver
+  uo[5]: "charge" # 30V charge enable
+  uo[6]: "status_led" # Active high status led
   uo[7]: ""
 
   # Bidirectional pins

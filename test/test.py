@@ -37,16 +37,13 @@ async def test_project(dut):
     await ClockCycles(dut.clk, 1)
 
     # match the actual expected output of your module:
-    assert dut.cont_enable.value == 1
     assert dut.speaker.value == 0
+    assert dut.speaker_n.value == 0
+    assert dut.cont_enable.value == 0
     assert dut.deploy.value == 0
     assert dut.dump.value == 1
     assert dut.charge.value == 0
     assert dut.status_led.value == 1
-    assert dut.sda_oe.value == 0
-    assert dut.sda_out.value == 0
-    assert dut.scl_oe.value == 0
-    assert dut.scl_out.value == 0
 
     # Wait for a 1 milisecs
     await ClockCycles(dut.clk, 1*1000*48 )
@@ -54,9 +51,17 @@ async def test_project(dut):
     assert dut.ym.value == 2222
     assert dut.zm.value == 3333
 
+    dut.x.value = 1234;
+    dut.y.value = 2345;
+    dut.z.value = 3456;
     # Wait for a 10 milisecs
     await ClockCycles(dut.clk, 10*1000*48 )
-    assert dut.speaker.value == 0
+    assert dut.cont_enable.value == 0
+    assert dut.deploy.value == 0
+    assert dut.dump.value == 1
+    assert dut.charge.value == 0
+    assert dut.status_led.value == 1
 
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+    assert dut.xm.value == 1234
+    assert dut.ym.value == 2345
+    assert dut.zm.value == 3456

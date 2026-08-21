@@ -12,6 +12,7 @@ module ldt_core (
     	input  logic 		cont_sense ,
     	output logic 		cont_enable,
     	output logic 		speaker    ,
+		output logic		speaker_n  ,
     	output logic 		deploy     ,
     	output logic 		dump       ,
     	output logic 		charge     ,
@@ -27,11 +28,12 @@ module ldt_core (
     );
 
 	// Tie off outputs
-	assign cont_enable = 1; // active low
-	assign speaker = 0;
-	assign deploy = 0;
-	assign dump = 1; // defaunt on 
-	assign charge = 0;
+	//assign cont_enable = 1; // active low
+	//assign speaker = 0;
+	//assign speaker_n = 0;
+	//assign deploy = 0;
+	//assign dump = 1; // defaunt on 
+	//assign charge = 0;
 	assign status_led = 1; // power led
 	//assign sda_oe = 0;
 	//assign sda_out = 0;
@@ -39,11 +41,12 @@ module ldt_core (
 	//assign scl_out = 0;
 
 	// Connect Accel block to sda/scl interface
+
 	logic x_valid;
 	logic y_valid;
 	logic z_valid;
 	logic sdata;
-	logic sample;
+	logic sample; // 100Hz, after xyz samples
 	accel_master i_accel (
 		.clk			( clk ),
 		.reset		( reset ),
@@ -54,10 +57,8 @@ module ldt_core (
 		.scl_in		( scl_in  ),
 		.scl_oe 		( scl_oe  ),
 		.scl_out		( scl_out ),
-		// Status
-		.sample		(sample ), 
-		// Data
-		.sdata		(sdata ),
+		.sample			(sample ), 
+		.sdata			(sdata ),
 		.x_valid		(x_valid),
 		.y_valid		(y_valid),
 		.z_valid		(z_valid)
@@ -74,21 +75,93 @@ module ldt_core (
 		y <= ( reset ) ? 0 : ( sample ) ? ys : y;
 		z <= ( reset ) ? 0 : ( sample ) ? zs : z;
 	end
+
+	// 100 Hz operating tick
+	logic tick;
+	always_ff @(posedge clk)
+		tick <= sample;
 	
-	// Launch Detect
-	
+	// Tone count of 1 sec for audio, free running
+	logic [6:0] audio_cnt; // 1 sec count of 100 ticks
+	always_ff @(posedge clk)
+		audio_cnt <= ( reset ) ? 0 : ( sample ) ? ( ( audio_cnt == 99 ) ? 0 : audio_cnt + 1 ) : audio_cnt;
+
 	// Continuity
+	always_ff @(posedge clk)
+		cont_enable <= ( safe && audio_cnt >=9 && audio_cnt < 15 ) ? 1'b1 : 1'b0;
+	
+	logic cont_sense_q;
+	always_ff @(posedge clk)
+		cont_sense_q <= cont_sense;
+
+	// Launch Detect
+	logic launch_detect;
+	always_ff @(posedge clk)
+		launch_detect <= ( reset ) ? 0 : ( !x[11] && x[10] ) ? 1'b1 : 1'b0 ;
+	
 
 	// Speaker Tone Generator
+	localparam NOTE_C8 = 13'h1665; // C8 � 4186 Hz 
+	localparam NOTE_D8 = 13'h13F5; // D8 � 4698 Hz
+	localparam NOTE_E8 = 13'h11C7; // E8 � 5274 Hz
+	localparam NOTE_F8 = 13'h10C7; // F8 � 5588 Hz
+	localparam NOTE_G8 = 13'h0EF3; // G8 � 6272 Hz
+	
+	logic [12:0] tone_cnt;
+	logic cont_tone;
+	logic spk_en, spk_toggle;
+	logic safe;
+	logic done;
+
+	always @(posedge clk) begin
+		if( reset ) begin
+			spk_toggle = 0;
+			spk_en = 0;
+			tone_cnt = 0;
+		end else if( tone_cnt == 0 ) begin
+			spk_toggle <= !spk_toggle;
+			{spk_en, tone_cnt}<= 
+					( safe && audio_cnt >=  0 && audio_cnt <  5 ) ? { 1'b1, NOTE_C8 } :
+					( safe && audio_cnt >= 10 && audio_cnt < 15 && !cont_sense_q) ? { 1'b1, NOTE_C8 } :
+					( done ) ? (( audio_cnt < 50) ? { 1'b1, NOTE_D8 } : { 1'b1, NOTE_F8 }) : 0;
+		end else begin
+			tone_cnt <= tone_cnt - 1;
+			spk_en <= spk_en;
+			spk_toggle <= spk_toggle;
+		end
+	end
+	
+	assign speaker = spk_toggle & spk_en ; 
+	assign speaker_n = !spk_toggle & spk_en ;
 
 	// Timer
 
-	// PreCharge
+	logic [10:0] end_time, pre_time;
+	assign end_time = ( dip_sw ^ 4'hF ) * 100 + 100;
+	assign pre_time = end_time - 50;
+	logic [10:0] timer;
+	always @(posedge clk)
+		timer <= ( reset ) ? 0 :
+				 ( tick & timer <  25 &&  launch_detect ) ? timer + 1 :
+				 ( tick & timer <  25 && !launch_detect ) ? 0 :
+				 ( tick & timer >= 25 && timer <= 11'h7FF ) ? timer + 1 : timer; // latch at max
 
-	// Deployment
+	// Dump = safe
+	assign safe = ( timer < 25 ) ? 1'b1 : 1'b0;
+	always @(posedge clk)
+		dump <= safe;
 
-	// Recovery Warble
+	// PreCharge (0.5 sec)
+	always @(posedge clk)
+		charge <= ( timer >= pre_time && timer < end_time ) ? 1'b1 : 1'b0 ;
 
+	// Deployment (10ms)
+	always @(posedge clk)
+		deploy <= ( timer == end_time ) ? 1'b1 : 1'b0 ;
+
+	// Done (drives warble, timer will saturate
+	always @(posedge clk)
+		done = ( timer > end_time ) ? 1'b1 : 1'b0;
 endmodule
 
 
