@@ -99,6 +99,16 @@ module ldt_core (
 	logic launch_detect;
 	always_ff @(posedge clk)
 		launch_detect <= ( reset ) ? 0 : ( !x[11] && x[10] ) ? 1'b1 : 1'b0 ;
+
+	// Launch Enable
+	logic [2:0] start_cnt;
+	always_ff @(posedge clk)
+		start_cnt <= ( reset ) ? 0 : 
+						( start_cnt == 5 ) ? 5 : 
+						( tick && launch_detect ) ? 0 : 
+						( tick && !launch_detect ) ? start_cnt + 1 : start_cnt;
+	logic launch_enable;
+	assign launch_enable = ( start_cnt == 5 && launch_detect ) ? 1'b1 : 1'b0;
 	
 
 	// Speaker Tone Generator
@@ -121,6 +131,7 @@ module ldt_core (
 		end else if( tone_cnt == 0 ) begin
 			spk_toggle <= !spk_toggle;
 			{spk_en, tone_cnt}<= 
+					( start_cnt != 5 ) ? ( ( audio_cnt[3] ) ? { 1'b1, NOTE_G8 } : 0 ) :
 					( safe && audio_cnt >=  0 && audio_cnt <  5 ) ? { 1'b1, NOTE_C8 } :
 					( safe && audio_cnt >= 10 && audio_cnt < 15 && !cont_sense_q) ? { 1'b1, NOTE_C8 } :
 					( done ) ? (( audio_cnt < 50) ? { 1'b1, NOTE_D8 } : { 1'b1, NOTE_F8 }) : 0;
@@ -142,9 +153,9 @@ module ldt_core (
 	logic [10:0] timer;
 	always @(posedge clk)
 		timer <= ( reset ) ? 0 :
-				 ( tick & timer <  25 &&  launch_detect ) ? timer + 1 :
-				 ( tick & timer <  25 && !launch_detect ) ? 0 :
-				 ( tick & timer >= 25 && timer <= 11'h7FF ) ? timer + 1 : timer; // latch at max
+				 ( tick & timer <  25 &&  launch_enable ) ? timer + 1 :
+				 ( tick & timer <  25 && !launch_enable ) ? 0 :
+				 ( tick & timer >= 25 && timer < 11'h7FF ) ? timer + 1 : timer; // latch at max
 
 	// Dump = safe
 	assign safe = ( timer < 25 ) ? 1'b1 : 1'b0;
