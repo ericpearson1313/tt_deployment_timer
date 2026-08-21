@@ -60,7 +60,7 @@ module tb ();
 	wire speaker, speaker_n, deploy, dump, charge;
 	wire status_led;
 	assign speaker = uo_out[1]; // active hi
-	assign speaker = uo_out[2]; // active zero or complementary.
+	assign speaker_n=uo_out[2]; // active zero or complementary.
 	assign deploy  = uo_out[3]; // active hi
 	assign dump    = uo_out[4]; // active hi
 	assign charge  = uo_out[5]; // active hi
