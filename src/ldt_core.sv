@@ -42,6 +42,7 @@ module ldt_core (
 
 	// Connect Accel block to sda/scl interface
 
+	logic [10:0] timer;
 	logic x_valid;
 	logic y_valid;
 	logic z_valid;
@@ -61,7 +62,11 @@ module ldt_core (
 		.sdata			(sdata ),
 		.x_valid		(x_valid),
 		.y_valid		(y_valid),
-		.z_valid		(z_valid)
+		.z_valid		(z_valid),
+		.record         ( { charge, dump, deploy, cont_enable, cont_sense, speaker, status_led, 
+							xs[11:0], ys[11:0], zs[11:0], 
+							dip_sw[3:0], timer[7:0],
+                            timer[10:8], start_cnt[2:0], 2'b00 } )
 	);
 	
 	// Testbench fpga monitors of x,y,z
@@ -150,7 +155,6 @@ module ldt_core (
 	logic [10:0] end_time, pre_time;
 	assign end_time = ( dip_sw ^ 4'hF ) * 100 + 100;
 	assign pre_time = end_time - 50;
-	logic [10:0] timer;
 	always @(posedge clk)
 		timer <= ( reset ) ? 0 :
 				 ( tick & timer <  25 &&  launch_enable ) ? timer + 1 :

@@ -42,7 +42,7 @@ async def test_project(dut):
 
     #If rtl over-ride sample rate to 25x
     if not GL_MODE:
-        dut.user_project.i_core.i_accel.byte_limit.value = 14;
+        dut.user_project.i_core.i_accel.byte_limit.value = 28;
         dut._log.info("over-ride and run 400us vs 10ms (25x)")
 
 
@@ -65,8 +65,7 @@ async def test_project(dut):
     assert dut.status_led.value == 1
 
     # Wait for a 350 usec for first sample to run, and check montors
-    await ClockCycles(dut.clk, 350*48 )
-    await ClockCycles(dut.clk, 15*11*120 )
+    await ClockCycles(dut.clk, 15*22*120 )
     assert dut.xm.value == 1111
     assert dut.ym.value == 2222
     assert dut.zm.value == 3333
@@ -77,7 +76,7 @@ async def test_project(dut):
     dut.z.value = 3456;
 
     # Wait for a 1 tick (it should not update in GL_MODE)
-    await ClockCycles(dut.clk, 15*11*120 )
+    await ClockCycles(dut.clk, 2*15*11*120 )
     if GL_MODE:
         # old values are still here, gates are real time
         assert dut.xm.value == 1111
