@@ -1,5 +1,6 @@
 // vim: ts=4:#include <stdio.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -45,6 +46,8 @@ int main(int argc, char **argv)
     uint8_t buf[8];
 
     if (!strcmp(argv[1], "write")) {
+	
+	srand(time(NULL));
         // generate random pattern
         for (int i = 0; i < 8; i++)
             buf[i] = rand() & 0xFF;
