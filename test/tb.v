@@ -79,7 +79,7 @@ module tb ();
 	accel_slave i_accel_sim (
     	.clk(clk),
     	.reset(reset),
-		.en( 1 ),
+		.en( 1'b1 ),
     	.sda( sda )     ,
     	.sda_oe( sda_soe )     ,
     	.scl( scl ) ,
@@ -95,7 +95,7 @@ module tb ();
 	accel_monitor i_accel_mon (
     	.clk(clk),
     	.reset(reset),
-		.en( 1 ),
+		.en( 1'b1 ),
     	.sda( sda ) ,
     	.scl( scl ) ,
 		.strobe( strobe ),

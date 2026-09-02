@@ -49,6 +49,8 @@ module ldt_core (
 	logic sdata;
 	logic sample; // 100Hz, after xyz samples
 	logic stop_rec;
+	logic [11:0] xs, ys, zs;
+	logic [2:0] start_cnt;
 	accel_master i_accel (
 		.clk			( clk ),
 		.reset		( reset ),
@@ -73,7 +75,6 @@ module ldt_core (
 	
 	// Testbench fpga monitors of x,y,z
 	
-	logic [11:0] xs, ys, zs;
 	always @(posedge clk) begin
 		xs <= ( reset ) ? 0 : ( x_valid ) ? { xs[10:0], sdata } : xs;
 		ys <= ( reset ) ? 0 : ( y_valid ) ? { ys[10:0], sdata } : ys;
@@ -105,10 +106,9 @@ module ldt_core (
 	// Launch Detect
 	logic launch_detect;
 	always_ff @(posedge clk)
-		launch_detect <= ( reset ) ? 0 : ( !x[11] && x[10] ) ? 1'b1 : 1'b0 ;
+		launch_detect <= ( reset ) ? 0 : (x[11]^x[10]);
 
 	// Launch Enable
-	logic [2:0] start_cnt;
 	always_ff @(posedge clk)
 		start_cnt <= ( reset ) ? 0 : 
 						( start_cnt == 5 ) ? 5 : 
@@ -132,9 +132,9 @@ module ldt_core (
 
 	always @(posedge clk) begin
 		if( reset ) begin
-			spk_toggle = 0;
-			spk_en = 0;
-			tone_cnt = 0;
+			spk_toggle <= 0;
+			spk_en <= 0;
+			tone_cnt <= 0;
 		end else if( tone_cnt == 0 ) begin
 			spk_toggle <= !spk_toggle;
 			{spk_en, tone_cnt}<= 
@@ -182,7 +182,7 @@ module ldt_core (
 
 	// Done (drives warble, timer will saturate
 	always @(posedge clk)
-		done = ( timer > end_time ) ? 1'b1 : 1'b0;
+		done <= ( timer > end_time ) ? 1'b1 : 1'b0;
 endmodule
 
 
