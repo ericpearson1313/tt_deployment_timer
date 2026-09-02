@@ -182,7 +182,7 @@ module ldt_core (
 
 	// Done (drives warble, timer will saturate
 	always @(posedge clk)
-		done <= ( timer > end_time ) ? 1'b1 : 1'b0;
+		done <= ( stop_rec ) ? 1'b1 : 1'b0;
 endmodule
 
 
