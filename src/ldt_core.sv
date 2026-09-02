@@ -159,9 +159,9 @@ module ldt_core (
 	assign pre_time = end_time - 50;
 	always @(posedge clk)
 		timer <= ( reset ) ? 0 :
-				 ( tick & timer <  25 &&  launch_enable ) ? timer + 1 :
-				 ( tick & timer <  25 && !launch_enable ) ? 0 :
-				 ( tick & timer >= 25 && timer < 11'h7FF ) ? timer + 1 : timer; // latch at max
+				 ( tick && timer <  25 &&  launch_enable ) ? timer + 1 :
+				 ( tick && timer <  25 && !launch_enable ) ? 0 :
+				 ( tick && timer >= 25 && timer < 11'h7FF ) ? timer + 1 : timer; // latch at max
 
 	// Stop Recording 
 	always @(posedge clk)

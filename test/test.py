@@ -117,21 +117,21 @@ async def test_project(dut):
     # start acceleration
     dut._log.info("Acceleration On")
     dut.x.value = 1500
-    await ClockCycles(dut.clk, 26*(15*11*120) )
+    await ClockCycles(dut.clk, 2*26*(15*11*120) )
     dut._log.info("Acceleration Off")
     dut.x.value = -500
-    await ClockCycles(dut.clk, 24*(15*11*120) )
+    await ClockCycles(dut.clk, 2*24*(15*11*120) )
     dut._log.info("Precharge")
     dut.x.value = 0
-    await ClockCycles(dut.clk, 50*(15*11*120) )
+    await ClockCycles(dut.clk, 2*50*(15*11*120) )
     dut._log.info("Deploy")
-    await ClockCycles(dut.clk, 25*(15*11*120) )
+    await ClockCycles(dut.clk, 2*25*(15*11*120) )
     dut._log.info("Warble")
-    await ClockCycles(dut.clk, 25*(15*11*120) )
+    await ClockCycles(dut.clk, 2*25*(15*11*120) )
     dut._log.info("Warble")
-    await ClockCycles(dut.clk, 25*(15*11*120) )
+    await ClockCycles(dut.clk, 2*25*(15*11*120) )
     dut._log.info("Warble")
-    await ClockCycles(dut.clk, 25*(15*11*120) )
+    await ClockCycles(dut.clk, 2*25*(15*11*120) )
     dut._log.info("Warble")
 
     # Last check of outputs
