@@ -58,7 +58,7 @@ async def test_project(dut):
     # match the actual expected output of your module:
     assert dut.speaker.value == 0
     assert dut.speaker_n.value == 0
-    assert dut.cont_enable.value == 0
+    assert dut.cont_enable.value == 1
     assert dut.deploy.value == 0
     assert dut.dump.value == 1
     assert dut.charge.value == 0
@@ -82,7 +82,7 @@ async def test_project(dut):
         assert dut.xm.value == 1111
         assert dut.ym.value == 2222
         assert dut.zm.value == 3333
-        assert dut.cont_enable.value == 0
+        assert dut.cont_enable.value == 1
         assert dut.deploy.value == 0
         assert dut.dump.value == 1
         assert dut.charge.value == 0
