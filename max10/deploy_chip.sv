@@ -288,9 +288,11 @@ module deploy_chip
 
 	// Big buffer of last 11 byte
 	// for display
-	logic [22:0][7:0] buf11;
+	logic [22:0][7:0] buf11, buf23;
 	always_ff @(posedge clk)
-		buf11 <= ( data_strobe ) ? { buf11[21:0], data } : buf11;
+		buf23 <= ( data_strobe ) ? { buf23[21:0], data } : buf23;
+	always_ff @(posedge clk)
+		buf11 <= ( strobe ) ? buf23 : buf11;
 
 	
 	
