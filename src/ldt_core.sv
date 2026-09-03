@@ -48,7 +48,7 @@ module ldt_core (
 	logic z_valid;
 	logic sdata;
 	logic sample; // 100Hz, after xyz samples
-	logic stop_rec;
+	logic stop_rec, start_rec;
 	logic [11:0] xs, ys, zs;
 	logic [2:0] start_cnt;
 	accel_master i_accel (
@@ -70,7 +70,8 @@ module ldt_core (
 							xs[11:0], ys[11:0], zs[11:0], 
 							dip_sw[3:0], timer[7:0],
                             timer[10:8], start_cnt[2:0], 2'b00 } ),
-		.stop_recording ( stop_rec )
+		.stop_recording ( stop_rec  ),
+		.start_recording( start_rec )
 	);
 	
 	// Testbench fpga monitors of x,y,z
@@ -97,7 +98,7 @@ module ldt_core (
 	// Continuity
 	logic safe;
 	always_ff @(posedge clk)
-		cont_enable <= ( safe && audio_cnt >=9 && audio_cnt < 15 ) ? 1'b1 : 1'b0;
+		cont_enable <= ( reset ) ? 1 : ( safe && audio_cnt >=9 && audio_cnt < 15 ) ? 1'b0 : 1'b1;
 	
 	logic cont_sense_q;
 	always_ff @(posedge clk)
@@ -163,6 +164,10 @@ module ldt_core (
 				 ( tick && timer <  25 && !launch_enable ) ? 0 :
 				 ( tick && timer >= 25 && timer < 11'h7FF ) ? timer + 1 : timer; // latch at max
 
+	// Start Recording 
+	always @(posedge clk)
+		start_rec <= ( reset ) ? 0 : ( tick && safe && audio_cnt == 10 && cont_sense_q ) ? 1 : start_rec; // start on 1st cont
+	
 	// Stop Recording 
 	always @(posedge clk)
 		stop_rec <= ( reset ) ? 0 : &timer | stop_rec; // 20.47 secs after launch stop recording (foreever)

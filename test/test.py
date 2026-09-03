@@ -111,7 +111,7 @@ async def test_project(dut):
     dut.y.value = 0
     dut.z.value = 0
     dut.dip_sw.value = 15
-    dut.cont_sense.value = 0
+    dut.cont_sense.value = 1
     await ClockCycles(dut.clk, 20*(15*11*120) )
 
     # start acceleration

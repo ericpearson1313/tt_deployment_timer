@@ -23,7 +23,8 @@ module accel_master (
 	output logic z_valid,
 	// Flight recoder input (big endian byte order)
 	input logic [62:0] record,
-	input logic stop_recording
+	input logic stop_recording,
+	input logic start_recording
 	);
 
 	//400 Khz cycle generator
@@ -113,7 +114,7 @@ module accel_master (
 	logic [0:7] read_addr = { 8'h03 };
 	logic [0:7] cmd_read  = { 7'h15, 1'b1 }; // read accel
 	logic [0:7] cmd_write2; //= { 7'b1010000, 1'b0 }; // write fram
-	assign cmd_write2= ( stop_recording ) ? 8'hFe : 8'hA0; // write fram (or write nowhere)
+	assign cmd_write2= ( stop_recording || !start_recording ) ? 8'hFe : 8'hA0; // write fram (or write nowhere)
 	logic [0:7] cmd_haddr, cmd_laddr;
 	assign cmd_haddr = { 1'b0, scount[11:5] };
 	assign cmd_laddr = { scount[4:0], 3'b000  };
