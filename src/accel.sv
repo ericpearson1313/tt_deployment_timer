@@ -194,8 +194,8 @@ module accel_slave (
 	
 	// count starts, stops, and rising edges
 	logic [2:0] start_cnt;
-	logic [6:0] rise_cnt; // Max 6 * 9
-	logic [6:0] fall_cnt; // Max 6 * 9
+	logic [7:0] rise_cnt; // Max 11 * 9
+	logic [7:0] fall_cnt; // Max 11 * 9
 	always_ff @(posedge clk) begin
 		start_cnt <= ( reset ) ? 0 : ( stop ) ? 0 : ( start ) ? start_cnt + 1 : start_cnt;
 		rise_cnt  <= ( reset ) ? 0 : ( start ) ? 0 : ( rise ) ? rise_cnt  + 1 : rise_cnt ;
@@ -220,10 +220,7 @@ module accel_slave (
                    start_cnt == 1 && fall_cnt == 1+2*9+8  ||
                    start_cnt == 2 && fall_cnt == 1+0*9+8  ||
                    start_cnt == 2 && fall_cnt == 1+1*9+8  ||
-                   start_cnt == 3 && fall_cnt == 1+0*9+8  ||
-				   start_cnt == 4 && fall_cnt == 1+0*9*8  ||
-				   start_cnt == 4 && fall_cnt == 1+1*9*8  ||
-				   start_cnt == 4 && fall_cnt == 1+2*9*8  ) ? 1'b1 : 1'b0;
+                   start_cnt == 3 && fall_cnt == 1+0*9+8  ) ? 1'b1 : 1'b0;
 
 	// Control when the sda_oe can be driven high with !data
 	logic dval;
