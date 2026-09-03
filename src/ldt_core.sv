@@ -139,10 +139,15 @@ module ldt_core (
 		end else if( tone_cnt == 0 ) begin
 			spk_toggle <= !spk_toggle;
 			{spk_en, tone_cnt}<= 
-					( start_cnt != 5 ) ? ( ( audio_cnt[3] ) ? { 1'b1, NOTE_G8 } : 0 ) :
-					( safe && audio_cnt >=  0 && audio_cnt <  5 ) ? { 1'b1, NOTE_C8 } :
-					( safe && audio_cnt >= 10 && audio_cnt < 15 && !cont_sense_q) ? { 1'b1, NOTE_C8 } :
-					( done ) ? (( audio_cnt < 50) ? { 1'b1, NOTE_D8 } : { 1'b1, NOTE_F8 }) : 0;
+					( start_cnt != 5 ) ? ( ( audio_cnt[3] ) ? { 1'b1, NOTE_G8 } : 0 ) :		// TOne at start until no accelleration, should not happen
+					( deploy ) ? { 1'b1, NOTE_C8 } :														// Tone during 100ms deployment 
+					( charge ) ? { 1'b1, NOTE_F8 } :														// Tone during 0.5sec harge
+					( launch_enable ) ?  { 1'b1, NOTE_G8 } :  										// Tone whenever accel > 2g
+					( timer >= 25 && timer < end_time && 
+					  audio_cnt >=  0 && audio_cnt <  10 ) ? { 1'b1, NOTE_E8 } :				// Ticks during timing
+					( safe && audio_cnt >=  0 && audio_cnt <  5 ) ? { 1'b1, NOTE_C8 } :		// Continuity first beep 
+					( safe && audio_cnt >= 10 && audio_cnt < 15 && !cont_sense_q) ? { 1'b1, NOTE_C8 } : // Contiuity second beep, failed
+					( done ) ? (( audio_cnt < 50) ? { 1'b1, NOTE_D8 } : { 1'b1, NOTE_F8 }) : 0;	// two tone warble for location
 		end else begin
 			tone_cnt <= tone_cnt - 1;
 			spk_en <= spk_en;

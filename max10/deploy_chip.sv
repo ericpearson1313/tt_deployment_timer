@@ -234,7 +234,7 @@ module deploy_chip
 
 	// Test Inputs driving.
 	always_comb begin
-		dip_sw = 4'b1111; 
+		dip_sw = 4'b1011; // act low, 4+1sec
 		cont_sense = ( key == 5'h10 ) ? 1'b1 : 1'b0;
 
 		// Test 1: do nothing
