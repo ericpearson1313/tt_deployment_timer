@@ -14,9 +14,12 @@ module deploy_chip
 
 
 	// Accel i2c bidir port, exernal pullups
-	//inout sda,  // pin 140
-	//inout scl,  // pin 62
+	inout sda,  // pin 140
+	inout scl,  // pin 62
 
+	// Cont_sense
+	input logic cont_sense, // pin 124 button
+	
 	// Speaker
 	output logic speaker, // pin 65
 	output logic speaker_n, // 132
@@ -53,7 +56,7 @@ module deploy_chip
 
 	// all I/O is internally emulated in the code as we are a full simulation
 	logic [3:0] dip_sw		;
-	logic 		cont_sense	;
+	//logic 		cont_sense	;
 	logic 		cont_enable	;
 	//logic 		speaker		;
 	//logic		speaker_n	;
@@ -72,13 +75,13 @@ module deploy_chip
 
 	
 	// Trisate I/Os I2c bus
-	//ioe_pad i_sda(.din(sda_out),.dout(sda_in),.oe(sda_oe),.pad_io(sda));
-	//ioe_pad i_scl(.din(scl_out),.dout(scl_in),.oe(scl_oe),.pad_io(scl));
+	ioe_pad i_sda(.din(sda_out),.dout(sda_in),.oe(sda_oe),.pad_io(sda));
+	ioe_pad i_scl(.din(scl_out),.dout(scl_in),.oe(scl_oe),.pad_io(scl));
 	
 	// Hook to simualted port
-	logic sda_soe;
-	assign scl_in = ( scl_oe ) ? 0 : 1;
-	assign sda_in = ( sda_oe || sda_soe ) ? 0 : 1;
+	//logic sda_soe;
+	//assign scl_in = ( scl_oe ) ? 0 : 1;
+	//assign sda_in = ( sda_oe || sda_soe ) ? 0 : 1;
 	
 
 	logic [4:0] key; // keypad, bit 4 indicates pressed
@@ -235,7 +238,7 @@ module deploy_chip
 	// Test Inputs driving.
 	always_comb begin
 		dip_sw = 4'b1011; // act low, 4+1sec
-		cont_sense = ( key == 5'h10 ) ? 1'b1 : 1'b0;
+		//cont_sense = ( key == 5'h10 ) ? 1'b1 : 1'b0;
 
 		// Test 1: do nothing
 		
@@ -247,22 +250,22 @@ module deploy_chip
   	/////////////////////
 
 	// Wire up an accel sim model 
-	wire [11:0] x, y, z; // accell inputs into model
-	accel_slave i_accel_sim (
-    	.clk(clk),
-    	.reset(reset),
-		.en( 1 ),
-    	.sda( sda_in )     ,
-    	.sda_oe( sda_soe )     ,
-    	.scl( scl_in ) ,
-    	.x( x ),
-    	.y( y ),
-    	.z( z )
-	);
-	assign x = ( key == 5'h1A ) ?  1250 :
-				  ( key == 5'h1B ) ? -1250 : 0;
-	assign y = count[25-:12];
-	assign z = count[28-:12];
+	//wire [11:0] x, y, z; // accell inputs into model
+	//accel_slave i_accel_sim (
+   // 	.clk(clk),
+   // 	.reset(reset),
+	//	.en( 1 ),
+   // 	.sda( sda_in )     ,
+   // 	.sda_oe( sda_soe )     ,
+   // 	.scl( scl_in ) ,
+   // 	.x( x ),
+   // 	.y( y ),
+   // 	.z( z )
+	//);
+	//assign x = ( key == 5'h1A ) ?  1250 :
+	//			  ( key == 5'h1B ) ? -1250 : 0;
+	//assign y = count[25-:12];
+	//assign z = count[28-:12];
 
   	/////////////////////
 	// Bus Monitor
