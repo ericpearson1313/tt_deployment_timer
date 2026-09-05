@@ -188,7 +188,7 @@ module deploy_chip
 		.reset		( reset 		   ),
 		// Chip Inputs
 		.dip_sw 		( dip_sw[3:0]	),
-		.cont_sense	( cont_sense	),
+		.cont_sense	( !cont_sense	), // act low push button TODO remove
 		// Chip Outputs
 		.cont_enable( cont_enable	),
 		.speaker		( ldt_speaker		),
