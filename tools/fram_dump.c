@@ -37,7 +37,6 @@ int main(int argc, char **argv)
     if (ioctl(fd, I2C_SLAVE, FRAM_ADDR) < 0) { perror("ioctl"); return 1; }
 
     uint8_t buf[8];
-        printf("Fram Read:\n");
 	for (int ll = 0; ll < atoi( argv[1] ); ll++ ) {
 		for( int ww = 0; ww < 8; ww++ ) {
     			if (fram_read(fd, 8*ww+64*ll, buf, sizeof(buf)) < 0) {
