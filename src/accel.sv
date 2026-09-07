@@ -244,6 +244,7 @@ module accel_monitor (
     input  logic scl,
 	// Dump observed bytes
 	output logic [7:0] data,
+	output logic nack,
 	output logic data_strobe,
 	// inner interface (from tb/model)
 	// values returend when reading x,y,z.
@@ -269,8 +270,10 @@ module accel_monitor (
 	logic [2:0] start_cnt;
 	logic [6:0] rise_cnt; // Max 8 * 9 = 72
 	logic [3:0] bit_cnt;
+	logic [15:0] idle_cnt;
 	always_ff @(posedge clk) begin
-		start_cnt <= ( reset ) ? 0 : ( stop ) ? 0 : ( start ) ? start_cnt + 1 : start_cnt;
+		idle_cnt  <= ( reset ) ? 0 : ( start ) ? 0 : ( idle_cnt != 16'hffff ) ? idle_cnt + 1 : idle_cnt;
+		start_cnt <= ( reset ) ? 0 : ( stop ) ? 0 : ( start ) ? start_cnt + 1 : ( idle_cnt == 16'hfffe ) ? 0 : start_cnt;
 		rise_cnt  <= ( reset ) ? 0 : ( start ) ? 0 : ( rise ) ? rise_cnt  + 1 : rise_cnt ;
 		bit_cnt   <= ( reset ) ? 0 : ( start ) ? 0 : ( rise && bit_cnt == 8 ) ? 0 : ( rise ) ? bit_cnt + 1 : bit_cnt;
 	end
@@ -301,8 +304,9 @@ module accel_monitor (
 			y <= ( reset ) ? 0 : ( stop ) ? sregy : y;
 			z <= ( reset ) ? 0 : ( stop ) ? sregz : z;
 			data <= ( reset ) ? 0 : ( bit_cnt == 8 && rise ) ? sdata : data;
+			nack <= ( reset ) ? 0 : ( bit_cnt == 8 && rise ) ? sda : nack;
 			data_strobe <= ( bit_cnt == 8 && rise ) ? 1'b1 : 1'b0;
-			strobe <= stop;
+			strobe <= stop || idle_cnt == 16'hfffe ;
 	end
 	
 endmodule

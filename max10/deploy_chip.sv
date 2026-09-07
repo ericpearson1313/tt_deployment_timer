@@ -271,21 +271,36 @@ module deploy_chip
 	// Bus Monitor
   	/////////////////////
 
+	// filter SDA/SCL for monitoring real signals
+	logic [16:0] sh_sda, sh_scl;
+	always @(posedge clk) begin
+		sh_sda <= ( reset ) ? 17'h1FFFF : { sh_sda[15:0], sda_in };
+		sh_scl <= ( reset ) ? 17'h1FFFF : { sh_scl[15:0], scl_in };
+	end
+	logic filt_sda, filt_scl;
+	always @(posedge clk) begin
+		filt_sda <= ( reset ) ? 1'b1 : ( &sh_sda[16-:15] ) ? 1'b1 : ( !(|sh_sda[16-:15])) ? 1'b0 : filt_sda;
+		filt_scl <= ( reset ) ? 1'b1 : ( &sh_scl[16-:15] ) ? 1'b1 : ( !(|sh_scl[16-:15])) ? 1'b0 : filt_scl;
+	end
+
+		
 
 	wire [11:0] xm, ym, zm; // monitor outputs
 	wire strobe, data_strobe;
 	wire [7:0] data;
+	wire nack;
 	accel_monitor i_accel_mon (
     	.clk(clk),
     	.reset(reset),
 		.en( 1 ),
-    	.sda( sda_in ) , // Monitor pin inputs
-    	.scl( scl_in ) ,
+    	.sda( filt_sda ) , // Monitor pin inputs
+    	.scl( filt_scl ) ,
 		.strobe( strobe ),
     	.x( xm ),
     	.y( ym ),
     	.z( zm ),
 		.data( data ),
+		.nack( nack ),
 		.data_strobe( data_strobe )
 	);
 
@@ -297,7 +312,11 @@ module deploy_chip
 	always_ff @(posedge clk)
 		buf11 <= ( strobe ) ? buf23 : buf11;
 
-	
+	logic [22:0] nbuf11, nbuf23;
+	always_ff @(posedge clk)
+		nbuf23 <= ( data_strobe ) ? { nbuf23[21:0], nack } : nbuf23;
+	always_ff @(posedge clk)
+		nbuf11 <= ( strobe ) ? nbuf23 : nbuf11;	
 	
 	//////////////////////////
 	// Local calc on Monitors
@@ -372,7 +391,7 @@ module deploy_chip
 	// Fast scope Inputs
 	assign fast_clk = clk_out; //(6mhz)
 	assign fast_cs = scl_in; // triggered on rising edge
-	assign fast_data = { scl_oe, sda_oe, scl_in, sda_in }; // bottom to top
+	assign fast_data = { filt_scl, filt_sda, scl_in, sda_in }; // bottom to top
 	
 	/////////////////////////////////
 	////
@@ -941,7 +960,7 @@ module deploy_chip
 	vga_fast_capture #(
 		.V_HEIGHT( 40 ), // 96 or 192 options
 		.V_START ( 320 ),
-		.H_START	( 529 ),
+		.H_START	( 320 ),
 		.H_END 	( 784 ),
 		.N       ( 60   ), // 60 Hz frames per col pel
 		.GD_COLOR( 24'h404040 /* smpte_deep_violet */ ), 
@@ -975,7 +994,8 @@ module deploy_chip
 	//string_overlay #(.LEN(11))_res4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('d117),.y('d5), .out( res_str[4] ), .str("(3E.E=Open)") );
 	hex_overlay    #(.LEN(24)) _res1 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char)    , .x('d90),.y('d13), .out( res_str[1] ), .in( buf11[22-:12] ) );
 	hex_overlay    #(.LEN(22)) _res2 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .hex_char(hex_char)    , .x('d90),.y('d15), .out( res_str[2] ), .in( buf11[10:0] ) );
-
+	bin_overlay    #(.LEN(12)) _res3 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .bin_char(bin_char)    , .x('d90), .y('d14), .out( bin_str[0] ), .in( nbuf11[22-:12] ) );
+	bin_overlay    #(.LEN(11)) _res4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .bin_char(bin_char)    , .x('d90), .y('d16), .out( bin_str[1] ), .in( nbuf11[10:0] ) );
 	
 	// Port Names
 	logic [5:0] in_str;
