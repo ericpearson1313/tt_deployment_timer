@@ -35,6 +35,7 @@ int main(int argc, char **argv)
     if (argc != 2) {
         printf("Usage:\n");
         printf("  fram_zero zero # fill mem with 0\n");
+        printf("  fram_zero check # check if mem all zero\n");
         return 1;
     }
 
@@ -43,7 +44,29 @@ int main(int argc, char **argv)
     if (ioctl(fd, I2C_SLAVE, FRAM_ADDR) < 0) { perror("ioctl"); return 1; }
 
     uint8_t buf[8];
+    int clear;
 
+    if (!strcmp(argv[1], "check")) {
+	
+        for (int i = 0; i < 8; i++)
+            buf[i] = 0;
+
+        printf("Checking if blank(all zero):\n");
+	clear = 1;
+	for( int ss = 0; ss < 4096; ss++ ) {
+        	if (fram_read(fd, ss * 8, buf, sizeof(buf)) < 0) {
+            		printf("Read failed\n");
+            		return 1;
+        	}
+		for( int ii = 0; ii < 8; ii++ ) 
+			if( buf[ii] != 0 )
+				clear = 0;
+	}
+	if( clear ) 
+        	printf("Device is Blank\n");
+	else
+        	printf("Blank check FAILED\n");
+	}
     if (!strcmp(argv[1], "zero")) {
 	
         for (int i = 0; i < 8; i++)
