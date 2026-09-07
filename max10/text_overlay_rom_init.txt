@@ -1,7 +1,7 @@
 // 128 column, 60 rows.  Even lines are ascii. Odd lines are color code, 0-F, <blank also 0>
 //-------------|---------------|---------------|---------------|---------------|---------------|---------------|---------------|
-  LDT Launch Deploy Timer MAX10 Platform
-  444R4444444444444444444
+  LDT Launch Deploy EMULATOR MAX10 Platform
+  444R4444444444444422222222
 
 
                     
