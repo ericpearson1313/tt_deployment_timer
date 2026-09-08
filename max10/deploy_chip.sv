@@ -13,16 +13,31 @@ module deploy_chip
 	/////////////
 
 
-	// Accel i2c bidir port, exernal pullups
-	inout sda,  // pin 140
-	inout scl,  // pin 62
+	// Accel i2c exernal pullups
+	inout sda,  					// pin 132
+	inout scl,  					// pin 65
 
 	// Cont_sense
-	input logic cont_sense, // pin 124 button
+	input  logic cont_sense, 	// pin 105
+	input logic cont_enable,	// pin 102
 	
-	// Speaker
-	output logic speaker, // pin 65
-	output logic speaker_n, // 132
+	// Speaker/Led
+	input logic speaker, 		// pin 99
+	input logic speaker_n, 		// pin 101
+	input logic status_led,		// pin 66
+	
+	// Controls
+	input logic charge, 			// pin 106
+	input logic dump,   			// pin 140
+	input logic deploy, 			// pin 127
+	
+	// Disp switch
+	input logic	sw1,				// pin 62
+	input logic	sw2,				// pin 135
+	input logic	sw4,				// pin 124
+	input logic	sw8,				// pin 100
+	
+	
 	
 	////////////
 	// DEBUG IO
@@ -55,15 +70,15 @@ module deploy_chip
 );
 
 	// all I/O is internally emulated in the code as we are a full simulation
-	logic [3:0] dip_sw		;
+	//logic 		sw1, sw2, sw4, sw8;
 	//logic 		cont_sense	;
-	logic 		cont_enable	;
+	//logic 		cont_enable	;
 	//logic 		speaker		;
 	//logic		speaker_n	;
-	logic 		charge		;
-	logic 		dump			;
-	logic 		deploy		;
-	logic 		status_led	;
+	//logic 		charge		;
+	//logic 		dump			;
+	//logic 		deploy		;
+	//logic 		status_led	;
 
 	logic 		sda_in		;
 	logic 		sda_oe		;
@@ -75,6 +90,10 @@ module deploy_chip
 
 	
 	// Trisate I/Os I2c bus
+	assign sda_oe = 0;
+	assign scl_oe = 0;
+	assign sda_out = 0;
+	assign scl_out = 0;
 	ioe_pad i_sda(.din(sda_out),.dout(sda_in),.oe(sda_oe),.pad_io(sda));
 	ioe_pad i_scl(.din(scl_out),.dout(scl_in),.oe(scl_oe),.pad_io(scl));
 	
@@ -114,8 +133,8 @@ module deploy_chip
 	end
 	
 	logic ldt_speaker, ldt_speaker_n;
-	assign speaker = ldt_speaker | ( spk_toggle & spk_en ); 
-	assign speaker_n = ldt_speaker_n | ( !spk_toggle & spk_en );
+	//assign speaker = ldt_speaker | ( spk_toggle & spk_en ); 
+	//assign speaker_n = ldt_speaker_n | ( !spk_toggle & spk_en );
 
 	
 
@@ -183,32 +202,32 @@ module deploy_chip
 	// Instantiate core
 
 	
-	ldt_core i_core (
-		.clk			( clk		     ),
-		.reset		( reset 		   ),
-		// Chip Inputs
-		.dip_sw 		( dip_sw[3:0]	),
-		.cont_sense	( !cont_sense	), // act low push button TODO remove
-		// Chip Outputs
-		.cont_enable( cont_enable	),
-		.speaker		( ldt_speaker		),
-		.speaker_n	( ldt_speaker_n    ),
-		.charge		( charge			),
-		.dump			( dump			),
-		.deploy		( deploy			),
-		.status_led ( status_led	),
-		// I2C bidir ports connection to accel
-		.sda_in		( sda_in			),
-		.sda_oe		( sda_oe			),
-		.sda_out		( sda_out		),
-		.scl_in		( scl_in			),
-		.scl_oe		( scl_oe			),
-		.scl_out		( scl_out		),
-		// Internal monitor of accel readings
-		.x	 			( fpga_probe 	),
-		.y	 			( fpga_probe2 	),
-		.z	 			( fpga_probe3 	)		
-	);
+	//ldt_core i_core (
+	//	.clk			( clk		     ),
+	//	.reset		( reset 		   ),
+	//	// Chip Inputs
+	//	.dip_sw 		( { sw8, sw4, sw2, sw1 } ),
+	//	.cont_sense	( !cont_sense	), // act low push button TODO remove
+	//	// Chip Outputs
+	//	.cont_enable( cont_enable	),
+	//	.speaker		( ldt_speaker		),
+	//	.speaker_n	( ldt_speaker_n    ),
+	//	.charge		( charge			),
+	//	.dump			( dump			),
+	//	.deploy		( deploy			),
+	//	.status_led ( status_led	),
+	//	// I2C bidir ports connection to accel
+	//	.sda_in		( sda_in			),
+	//	.sda_oe		( sda_oe			),
+	//	.sda_out		( sda_out		),
+	//	.scl_in		( scl_in			),
+	//	.scl_oe		( scl_oe			),
+	//	.scl_out		( scl_out		),
+	//	// Internal monitor of accel readings
+	//	.x	 			( fpga_probe 	),
+	//	.y	 			( fpga_probe2 	),
+	//	.z	 			( fpga_probe3 	)		
+	//);
 
   	//////////////////////
   	//////////////////////
@@ -237,7 +256,7 @@ module deploy_chip
 
 	// Test Inputs driving.
 	always_comb begin
-		dip_sw = 4'b1011; // act low, 4+1sec
+		//{ sw8, sw4, sw2, sw1 } = 4'b1011; // act low, 4+1sec
 		//cont_sense = ( key == 5'h10 ) ? 1'b1 : 1'b0;
 
 		// Test 1: do nothing
@@ -328,7 +347,7 @@ module deploy_chip
 	assign probe[1] = ym;	// y
 	assign probe[2] = zm; 	// z
 	assign probe[3] = fpga_probe;
-	assign probe[4] = { 2'h0, dip_sw[3:0], 6'h00 }; 
+	assign probe[4] = { 2'h0, sw8, sw4, sw2, sw1, 6'h00 }; 
 
 	
 	//////////////////////////////
