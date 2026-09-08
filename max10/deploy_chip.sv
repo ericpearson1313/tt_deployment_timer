@@ -139,7 +139,7 @@ module deploy_chip
 	
 	logic [1:0] meta_reset;
 	always @(posedge clk) 
-		meta_reset <= { meta_reset[0], reset_n };
+		meta_reset <= { meta_reset[0], !reset_n };
 
 	logic [3:0] reset_shift = 0; // initial value upon config
 	always @(posedge clk) begin
