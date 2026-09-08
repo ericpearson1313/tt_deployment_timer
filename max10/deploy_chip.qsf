@@ -179,12 +179,34 @@ set_global_assignment -name SYSTEMVERILOG_FILE lib/altera_gpio_lite.sv
 set_global_assignment -name VERILOG_FILE lib/ioe_pads7.v
 set_global_assignment -name QIP_FILE lib/trial_pll.qip
 set_global_assignment -name SYSTEMVERILOG_FILE pump_chip.sv
-set_location_assignment PIN_62 -to scl
-set_location_assignment PIN_140 -to sda
-set_location_assignment PIN_65 -to speaker
-set_location_assignment PIN_132 -to speaker_n
+set_location_assignment PIN_65 -to scl
+set_location_assignment PIN_132 -to sda
+set_location_assignment PIN_99 -to speaker
+set_location_assignment PIN_101 -to speaker_n
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to speaker
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to speaker_n
-set_location_assignment PIN_124 -to cont_sense
+set_location_assignment PIN_105 -to cont_sense
 set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to cont_sense
+set_location_assignment PIN_106 -to charge
+set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to charge
+set_location_assignment PIN_102 -to cont_enable
+set_location_assignment PIN_66 -to status_led
+set_location_assignment PIN_140 -to dump
+set_location_assignment PIN_127 -to deploy
+set_location_assignment PIN_62 -to sw1
+set_location_assignment PIN_135 -to sw2
+set_location_assignment PIN_124 -to sw4
+set_location_assignment PIN_100 -to sw8
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw8
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw4
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw2
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to sw1
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to status_led
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to dump
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to deploy
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to cont_enable
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw8
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw4
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw2
+set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw1
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
