@@ -103,6 +103,7 @@ module tb ();
     	.y( ym ),
     	.z( zm ),
 		.data( data ),
+		.nack( ),
 		.data_strobe( data_strobe )
 	);
 

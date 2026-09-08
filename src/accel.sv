@@ -106,6 +106,10 @@ module accel_master (
 	logic start_cmd;
 	always_ff @(posedge clk)
 		start_cmd <= ( byte_cnt < 23 && bit_cnt == 0 && ph2 ) ? 1'b1 : 1'b0;
+
+	logic bus_reset;
+	always_ff @(posedge clk)
+		bus_reset <= ( byte_cnt == 23 && bit_cnt >= 3 && bit_cnt <= 5 ) ? 1'b1 : 1'b0;
 	
 	// Otherwise data bits shall be driven durign bytes 0 to 4, msb fist during bits 1 to 8
 	logic [0:7] cmd_write = { 7'h15, 1'b0 }; // write accel
@@ -154,7 +158,7 @@ module accel_master (
 	logic [1:0] fsr;
 	assign fsr = 2'b00; // Set fsr full scale range 0-2g, 1-4g, 2-8g
 	always_ff @(posedge clk)
-		sda_oe<= read_ack | stop_cmd | start_cmd | data | pre_stop;
+		sda_oe<= read_ack | stop_cmd | start_cmd | data | pre_stop | bus_reset;
 	
 	// Hook up Sdata, register and passthru
 	always @(posedge clk) 
