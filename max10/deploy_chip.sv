@@ -13,16 +13,31 @@ module deploy_chip
 	/////////////
 
 
-	// Accel i2c bidir port, exernal pullups
-	inout sda,  // pin 140
-	inout scl,  // pin 62
+	// Accel i2c exernal pullups
+	inout sda,  					// pin 132
+	inout scl,  					// pin 65
 
 	// Cont_sense
-	input logic cont_sense, // pin 124 button
+	input  logic cont_sense, 	// pin 105
+	output logic cont_enable,	// pin 102
 	
-	// Speaker
-	output logic speaker, // pin 65
-	output logic speaker_n, // 132
+	// Speaker/Led
+	output logic speaker, 		// pin 99
+	output logic speaker_n, 	// pin 101
+	output logic status_led,	// pin 66
+	
+	// Controls
+	output logic charge, 		// pin 106
+	output logic dump,   		// pin 140
+	output logic deploy, 		// pin 127
+	
+	// Disp switch
+	input logic	sw1,				// pin 62
+	input logic	sw2,				// pin 135
+	input logic	sw4,				// pin 124
+	input logic	sw8,				// pin 100
+	
+	
 	
 	////////////
 	// DEBUG IO
@@ -55,15 +70,15 @@ module deploy_chip
 );
 
 	// all I/O is internally emulated in the code as we are a full simulation
-	logic [3:0] dip_sw		;
+	//logic 		sw1, sw2, sw4, sw8;
 	//logic 		cont_sense	;
-	logic 		cont_enable	;
+	//logic 		cont_enable	;
 	//logic 		speaker		;
 	//logic		speaker_n	;
-	logic 		charge		;
-	logic 		dump			;
-	logic 		deploy		;
-	logic 		status_led	;
+	//logic 		charge		;
+	//logic 		dump			;
+	//logic 		deploy		;
+	//logic 		status_led	;
 
 	logic 		sda_in		;
 	logic 		sda_oe		;
@@ -187,7 +202,7 @@ module deploy_chip
 		.clk			( clk		     ),
 		.reset		( reset 		   ),
 		// Chip Inputs
-		.dip_sw 		( dip_sw[3:0]	),
+		.dip_sw 		( { sw8, sw4, sw2, sw1 } ),
 		.cont_sense	( !cont_sense	), // act low push button TODO remove
 		// Chip Outputs
 		.cont_enable( cont_enable	),
@@ -237,7 +252,7 @@ module deploy_chip
 
 	// Test Inputs driving.
 	always_comb begin
-		dip_sw = 4'b1011; // act low, 4+1sec
+		//{ sw8, sw4, sw2, sw1 } = 4'b1011; // act low, 4+1sec
 		//cont_sense = ( key == 5'h10 ) ? 1'b1 : 1'b0;
 
 		// Test 1: do nothing
@@ -328,7 +343,7 @@ module deploy_chip
 	assign probe[1] = ym;	// y
 	assign probe[2] = zm; 	// z
 	assign probe[3] = fpga_probe;
-	assign probe[4] = { 2'h0, dip_sw[3:0], 6'h00 }; 
+	assign probe[4] = { 2'h0, sw8, sw4, sw2, sw1, 6'h00 }; 
 
 	
 	//////////////////////////////
