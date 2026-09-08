@@ -136,10 +136,14 @@ module deploy_chip
 		);
 		
 	// delayed from fpga config and external reset d-assert
+	
+	logic [1:0] meta_reset;
+	always @(posedge clk) 
+		meta_reset <= { meta_reset[0], reset_n };
 
 	logic [3:0] reset_shift = 0; // initial value upon config
 	always @(posedge clk) begin
-			if( !reset_n ) begin
+			if( meta_reset[1] ) begin
 				reset_shift <= 4'h0;
 			end else begin
 				if( reset_shift != 4'HF ) begin
@@ -151,7 +155,8 @@ module deploy_chip
 	end
 
 	logic reset;
-	assign reset = (reset_shift[3:0] != 4'hF) ? 1'b1 : 1'b0; // reset de-asserted after all bit shifted in 
+	always @(posedge clk) 
+		reset <= (reset_shift[3:0] != 4'hF) ? 1'b1 : 1'b0; // reset de-asserted after all bit shifted in 
 
 
 	// AIN LED Display with counter
