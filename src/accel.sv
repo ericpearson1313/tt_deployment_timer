@@ -91,7 +91,7 @@ module accel_master (
 	// Upon reasd, and ack, the sda shoudl be driven 0 during ph1 of bit 9
 	logic read_ack;
 	always_ff @(posedge clk)
-		read_ack <= ( byte_cnt >= 6 && byte_cnt <= 11 && bit_cnt == 9 ) ? 1'b1 : 1'b0;
+		read_ack <= ( byte_cnt >= 6 && byte_cnt <= 10 && bit_cnt == 9 ) ? 1'b1 : 1'b0;
 			
 	// for a stop, the the sda should be driven during ph2 of bit 9 during byte 10
 	logic stop_cmd;
@@ -106,6 +106,10 @@ module accel_master (
 	logic start_cmd;
 	always_ff @(posedge clk)
 		start_cmd <= ( byte_cnt < 23 && bit_cnt == 0 && ph2 ) ? 1'b1 : 1'b0;
+		
+	logic recording;
+	always_ff @(posedge clk)
+		recording <= ( reset ) ? 0 : ( sample ) ? ( !( stop_recording | !start_recording ) ) : recording;
 	
 	// Otherwise data bits shall be driven durign bytes 0 to 4, msb fist during bits 1 to 8
 	logic [0:7] cmd_write = { 7'h15, 1'b0 }; // write accel
@@ -114,7 +118,7 @@ module accel_master (
 	logic [0:7] read_addr = { 8'h03 };
 	logic [0:7] cmd_read  = { 7'h15, 1'b1 }; // read accel
 	logic [0:7] cmd_write2; //= { 7'b1010000, 1'b0 }; // write fram
-	assign cmd_write2= ( stop_recording || !start_recording ) ? 8'hFe : 8'hA0; // write fram (or write nowhere)
+	assign cmd_write2= ( !recording ) ? 8'hEE : 8'hA0; // write fram (or write nowhere)
 	logic [0:7] cmd_haddr, cmd_laddr;
 	assign cmd_haddr = { 1'b0, scount[11:5] };
 	assign cmd_laddr = { scount[4:0], 3'b000  };
@@ -153,8 +157,9 @@ module accel_master (
 	assign sda_out = 0;
 	logic [1:0] fsr;
 	assign fsr = 2'b00; // Set fsr full scale range 0-2g, 1-4g, 2-8g
+	logic [8:0] del_sda;
 	always_ff @(posedge clk)
-		sda_oe<= read_ack | stop_cmd | start_cmd | data | pre_stop;
+		{ sda_oe, del_sda } <= ( reset ) ? 0 : { del_sda, read_ack | stop_cmd | start_cmd | data | pre_stop };
 	
 	// Hook up Sdata, register and passthru
 	always @(posedge clk) 
@@ -244,6 +249,7 @@ module accel_monitor (
     input  logic scl,
 	// Dump observed bytes
 	output logic [7:0] data,
+	output logic nack,
 	output logic data_strobe,
 	// inner interface (from tb/model)
 	// values returend when reading x,y,z.
@@ -269,8 +275,10 @@ module accel_monitor (
 	logic [2:0] start_cnt;
 	logic [6:0] rise_cnt; // Max 8 * 9 = 72
 	logic [3:0] bit_cnt;
+	logic [15:0] idle_cnt;
 	always_ff @(posedge clk) begin
-		start_cnt <= ( reset ) ? 0 : ( stop ) ? 0 : ( start ) ? start_cnt + 1 : start_cnt;
+		idle_cnt  <= ( reset ) ? 0 : ( start ) ? 0 : ( idle_cnt != 16'hffff ) ? idle_cnt + 1 : idle_cnt;
+		start_cnt <= ( reset ) ? 0 : ( stop ) ? 0 : ( start ) ? start_cnt + 1 : ( idle_cnt == 16'hfffe ) ? 0 : start_cnt;
 		rise_cnt  <= ( reset ) ? 0 : ( start ) ? 0 : ( rise ) ? rise_cnt  + 1 : rise_cnt ;
 		bit_cnt   <= ( reset ) ? 0 : ( start ) ? 0 : ( rise && bit_cnt == 8 ) ? 0 : ( rise ) ? bit_cnt + 1 : bit_cnt;
 	end
@@ -301,8 +309,9 @@ module accel_monitor (
 			y <= ( reset ) ? 0 : ( stop ) ? sregy : y;
 			z <= ( reset ) ? 0 : ( stop ) ? sregz : z;
 			data <= ( reset ) ? 0 : ( bit_cnt == 8 && rise ) ? sdata : data;
+			nack <= ( reset ) ? 0 : ( bit_cnt == 8 && rise ) ? sda : nack;
 			data_strobe <= ( bit_cnt == 8 && rise ) ? 1'b1 : 1'b0;
-			strobe <= stop;
+			strobe <= stop || idle_cnt == 16'hfffe ;
 	end
 	
 endmodule
