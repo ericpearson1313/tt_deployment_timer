@@ -29,7 +29,7 @@ int main(void)
     for (int i = 1; i < TOTAL_WORDS; i++) {
         int prev = (buf[i-1] >> 63) & 1;
         int curr = (buf[i]   >> 63) & 1;
-        if ( buf[i-1]!= 0 && buf[i] != 0 && (prev ^ curr)) {
+        if (prev ^ curr) {
             end = i;
             break;
         }
@@ -41,12 +41,12 @@ int main(void)
     }
 
     // --- Wrap back 2100 samples ---
-    int start = end - 2100;
+    int start = end;
     if (start < 0) start += TOTAL_WORDS;
 
     // --- Extract 50 X-fields stepping forward by 10 ---
     // X-field = bits [31:20] (example: adjust if your X is elsewhere)
-    int count = 32;
+    int count = 500;
     int step  = 10;
 
     int pos = start;
