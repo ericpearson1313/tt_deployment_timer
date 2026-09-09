@@ -91,7 +91,7 @@ module accel_master (
 	// Upon reasd, and ack, the sda shoudl be driven 0 during ph1 of bit 9
 	logic read_ack;
 	always_ff @(posedge clk)
-		read_ack <= ( byte_cnt >= 6 && byte_cnt <= 11 && bit_cnt == 9 ) ? 1'b1 : 1'b0;
+		read_ack <= ( byte_cnt >= 6 && byte_cnt <= 10 && bit_cnt == 9 ) ? 1'b1 : 1'b0;
 			
 	// for a stop, the the sda should be driven during ph2 of bit 9 during byte 10
 	logic stop_cmd;
