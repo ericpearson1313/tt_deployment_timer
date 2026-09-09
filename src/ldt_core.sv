@@ -130,6 +130,7 @@ module ldt_core (
 	logic cont_tone;
 	logic spk_en, spk_toggle;
 	logic done;
+	logic [10:0] end_time, pre_time;
 
 	always @(posedge clk) begin
 		if( reset ) begin
@@ -160,7 +161,6 @@ module ldt_core (
 
 	// Timer
 
-	logic [10:0] end_time, pre_time;
 	assign end_time = ( dip_sw ^ 4'hF ) * 100 + 100;
 	assign pre_time = end_time - 50;
 	always @(posedge clk)
