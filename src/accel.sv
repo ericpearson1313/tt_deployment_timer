@@ -157,8 +157,9 @@ module accel_master (
 	assign sda_out = 0;
 	logic [1:0] fsr;
 	assign fsr = 2'b00; // Set fsr full scale range 0-2g, 1-4g, 2-8g
+	logic [8:0] del_sda;
 	always_ff @(posedge clk)
-		sda_oe<= read_ack | stop_cmd | start_cmd | data | pre_stop;
+		{ sda_oe, del_sda } <= { del_sda, read_ack | stop_cmd | start_cmd | data | pre_stop };
 	
 	// Hook up Sdata, register and passthru
 	always @(posedge clk) 
