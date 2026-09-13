@@ -163,9 +163,15 @@ module ldt_core (
 
 	assign end_time = ( dip_sw ^ 4'hF ) * 100 + 100;
 	assign pre_time = end_time - 50;
+	logic [1:0] skip; // up to 2 skips allowed during 25 cycle
+	always @(posedge clk)
+		skip  <= ( reset ) ? 0 :
+                 ( tick && timer < 25 && timer > 1 && !launch_enable && skip < 2 ) ? skip + 1 : 
+				 ( tick && timer < 25 && timer > 1 && !launch_enable ) ? 0 : skip;
 	always @(posedge clk)
 		timer <= ( reset ) ? 0 :
 				 ( tick && timer <  25 &&  launch_enable ) ? timer + 1 :
+				 ( tick && timer <  25 && !launch_enable && skip < 2 ) ? timer + 1 :
 				 ( tick && timer <  25 && !launch_enable ) ? 0 :
 				 ( tick && timer >= 25 && timer < 11'h7FF ) ? timer + 1 : timer; // latch at max
 
