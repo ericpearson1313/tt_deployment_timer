@@ -322,6 +322,10 @@ module deploy_chip
 		nbuf23 <= ( data_strobe ) ? { nbuf23[21:0], nack } : nbuf23;
 	always_ff @(posedge clk)
 		nbuf11 <= ( strobe ) ? nbuf23 : nbuf11;	
+		
+	logic nack_flag;
+	always_ff @(posedge clk)
+			nack_flag <= ( strobe ) ? (|nbuf23[22-:6]) : nack_flag;
 	
 	//////////////////////////
 	// Local calc on Monitors
@@ -361,21 +365,23 @@ module deploy_chip
 	// create 100 Hz strobe 
 	logic [19:0] strobe_count;
 	always_ff @(posedge clk) begin
-		strobe_count <= ( strobe_count == 480000-1 ) ? 0 : strobe_count + 1;
-		mad_strobe <= ( strobe_count == 480000-1 ) ? 1'b1 : 1'b0;
+		//strobe_count <= ( strobe_count == 480000-1 ) ? 0 : strobe_count + 1;
+		//mad_strobe <= ( strobe_count == 480000-1 ) ? 1'b1 : 1'b0;
+		strobe_count <= ( strobe_count == 16-1 ) ? 0 : strobe_count + 1;
+		mad_strobe <= ( strobe_count == 16-1 ) ? 1'b1 : 1'b0;
 	end
 	
 	// monitor 8x chip I/O pins
 	
 	assign dig_mon = { 
-							cont_sense		,
-							cont_enable		,
-							speaker			,
-							charge			,
-							dump				, 
-							deploy			,
-							status_led		,
-							1'b0
+							nack_flag, 	//cont_sense		,
+							1'b0, 	//cont_enable		,
+							1'b0, 	//speaker			,
+							sda_oe, 	//charge			,
+							1'b0, 	//dump				, 
+							1'b0, 	//deploy			,
+							scl_in, 	//status_led		,
+							sda_in	 	//1'b0
 						};	
 							
 		
@@ -463,10 +469,12 @@ module deploy_chip
 	logic m_cap_halt;
 	logic m_pwm;
 
-	assign m_pwm = 0;
+	assign m_pwm = xm[11] ^ xm[10]; // 0;
 	assign burn = 0;
-	assign m_cap_halt = 1;
-	
+	//assign m_cap_halt = 1;
+	always @(posedge clk) 
+		m_cap_halt <= ( reset ) ? 0 : ( xm[11] ^ xm[10] ) ? 1 : m_cap_halt;
+		
 	always @(posedge clk) begin
 		if( reset ) begin
 			zoom <= 0;
@@ -480,7 +488,7 @@ module deploy_chip
 			key_del <= key[4];
 			pwm_del <= m_pwm;
 			burn_del <= burn;
-			retrigger <= ( !pwm_del && m_pwm && retrigger == 0 ) ? 16'hffff : ( retrigger == 0 ) ? 0 : retrigger - 1;
+			retrigger <= 0; //( !pwm_del && m_pwm && retrigger == 0 ) ? 16'hffff : ( retrigger == 0 ) ? 0 : retrigger - 1;
 			base_addr <= ( !pwm_del && m_pwm && retrigger == 0 && !m_cap_halt ) ? awaddr : base_addr; 
 			burn_addr <= ( !pwm_del && m_pwm && retrigger == 0 && !m_cap_halt ) ? awaddr : // default to base addr
 			             ( !burn_del && burn                              ) ? awaddr : // snap to burn addr
@@ -631,8 +639,8 @@ module deploy_chip
 			awaddr <= 25'b0;
 			awvalid <= 0;
 		end else begin
-			//if( m_cap_halt && awaddr[24:4] == (base_addr[24:4] - 16384) ) begin // approx 10 ms before start
-			if( awaddr[24:4] == 21'h1FFFFF ) begin
+			if( m_cap_halt && awaddr[24:4] == (base_addr[24:4] - 16384) ) begin // approx 10 ms before start
+			//if( awaddr[24:4] == 21'h1FFFFF ) begin
 				awvalid <= 0;
 				awaddr <= awaddr;
 			end else begin
