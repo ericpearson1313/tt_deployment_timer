@@ -107,4 +107,46 @@ module tb ();
 		.data_strobe( data_strobe )
 	);
 
+	dump_playback i_playback( .clk(clk), .reset(reset) );
+
 endmodule
+
+module dump_playback (
+	input clk,
+	input reset
+	);
+	
+	wire phase, charge, dump, deploy, cont_enable, cont_sense, speaker, status_led;
+	wire [11:0] xs, ys, zs;
+	wire [10:0] timer;
+	wire [2:0] start_cnt;
+	wire [3:0] dip_sw;
+	wire [1:0] empty;
+	
+    integer fd;
+	integer ii;
+    reg [63:0] mem [0:4095];
+    reg [519:0] line;   // enough to hold 64 chars + newline
+
+    initial begin
+        fd = $fopen("../tools/flight_sept_12_2026_g68.bin", "r");
+        if (fd == 0) begin
+            $display("ERROR: cannot open file");
+            $finish;
+        end
+		for( ii = 0; ii < 4096; ii = ii + 1 ) begin
+        	void'($fgets(line, fd));
+        	void'($sscanf(line, "%b", mem[ii])); 
+		end
+        $fclose(fd);
+    end
+
+	logic [11:0] mem_cnt;
+	always @(posedge clk) 
+		mem_cnt <= ( reset ) ? 0 : ( mem_cnt < 4095 ) ? mem_cnt + 1 : mem_cnt; 
+
+	assign { phase, charge, dump, deploy, cont_enable, cont_sense, speaker, status_led, 
+             xs[11:0], ys[11:0], zs[11:0],dip_sw[3:0], timer[7:0],timer[10:8], start_cnt[2:0], empty[1:0] } = mem[mem_cnt];
+
+endmodule
+
