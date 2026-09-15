@@ -188,7 +188,6 @@ set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw8
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw4
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw2
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to sw1
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
 set_global_assignment -name SYSTEMVERILOG_FILE deploy_chip.sv
 set_global_assignment -name VERILOG_FILE lib/ioe_pad.v
 set_global_assignment -name SYSTEMVERILOG_FILE ../src/accel.sv
@@ -210,3 +209,4 @@ set_global_assignment -name SYSTEMVERILOG_FILE hdmi_debug/auxiliary_video_inform
 set_global_assignment -name SYSTEMVERILOG_FILE lib/altera_gpio_lite.sv
 set_global_assignment -name VERILOG_FILE lib/ioe_pads7.v
 set_global_assignment -name QIP_FILE lib/trial_pll.qip
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

@@ -203,7 +203,7 @@ module deploy_chip
 		.reset		( reset 		   ),
 		// Chip Inputs
 		.dip_sw 		( { sw8, sw4, sw2, sw1 } ),
-		.cont_sense	( !cont_sense	), // act low push button TODO remove
+		.cont_sense	( cont_sense	), 
 		// Chip Outputs
 		.cont_enable( cont_enable	),
 		.speaker		( ldt_speaker		),
@@ -873,12 +873,12 @@ module deploy_chip
 	// Overlay PSRAM ID and expected values
 	logic [31:0] disp_id;
 	//assign disp_id = { id_reg[34:31], id_reg[30:27],id_reg[25:22],id_reg[21:18],id_reg[16:13],id_reg[12: 9],id_reg[ 7: 4],id_reg[ 3: 0] };
-	logic [4:0] id_str;
+	logic [5:0] id_str;
 	//string_overlay #(.LEN(5)) _id0(.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y),.ascii_char(ascii_char), .x('h48), .y('h09), .out( id_str[0]), .str( "PSRAM" ) );
 	//hex_overlay    #(.LEN(8 )) _id1(.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y),.hex_char(hex_char), .x('h50),.y('d58), .out( id_str[1]), .in( disp_id ) );
    //bin_overlay    #(.LEN(1 )) _id2(.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y),.bin_char(bin_char), .x('h46),.y('h09), .out( id_str[2]), .in( disp_id == 32'h0E96_0001 ) );
 	//string_overlay #(.LEN(12)) _id3(.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y),.ascii_char(ascii_char), .x('d120),.y('d59), .out( id_str[3]), .str( "ERIC PEARSON" ) );
-	string_overlay #(.LEN( 9)) _id4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h02),.y('h03), .out(id_str[4]), 
+	string_overlay #(.LEN( 9)) _id4 (.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y), .ascii_char(ascii_char), .x('h02),.y('h03), .out(id_str[4]),
 	.str(	( zoom == 0 ) ? "  4ms/div" :
 			( zoom == 1 ) ? "  8ms/div" :
 			( zoom == 2 ) ? " 16ms/div" :
@@ -892,7 +892,7 @@ module deploy_chip
 			( zoom == 10) ? "  5 s/div" :
 			( zoom == 11) ? " 10 s/div" :
 			/*zoom == 12)*/ " 20 s/div" ) );
-
+	hex_overlay    #(.LEN(1 )) _id5(.clk(hdmi_clk), .reset(reset), .char_x(char_x), .char_y(char_y),.hex_char(hex_char), .x(10),.y(6), .out( id_str[5]), .in( ~{ sw8, sw4, sw2, sw1 }) );
 	
 	// Overlay the Keystroke
 	logic key_str, key_strg;
