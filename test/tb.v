@@ -53,7 +53,7 @@ module tb ();
 	assign scl_in = scl;
 
 	wire cont_enable;
-	assign cont_enable = uo_out[0];; // active low
+	assign cont_enable = uo_out[0];
 
 	wire speaker, speaker_n, deploy, dump, charge;
 	wire status_led;

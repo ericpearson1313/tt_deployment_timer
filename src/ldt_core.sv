@@ -28,7 +28,7 @@ module ldt_core (
     );
 
 	// Tie off outputs
-	//assign cont_enable = 1; // active low
+	//assign cont_enable = 0; 
 	//assign speaker = 0;
 	//assign speaker_n = 0;
 	//assign deploy = 0;
@@ -98,7 +98,7 @@ module ldt_core (
 	// Continuity
 	logic safe;
 	always_ff @(posedge clk)
-		cont_enable <= ( reset ) ? 1 : ( safe && audio_cnt >=9 && audio_cnt < 15 ) ? 1'b0 : 1'b1;
+		cont_enable <= ( reset ) ? 1 : ( safe && audio_cnt >=9 && audio_cnt < 15 ) ? 1'b1 : 1'b0;
 	
 	logic cont_sense_q;
 	always_ff @(posedge clk)
