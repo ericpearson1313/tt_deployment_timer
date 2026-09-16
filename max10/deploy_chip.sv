@@ -2,6 +2,9 @@
 `timescale 1ns / 1ps
 module deploy_chip
 
+// Define ACCEL_SIM to use a model of the accel and internal I2cbus
+`define ACCEL_SIM
+
 #(
 	// Parameter Declarations
 	parameter UNIQ_ID = 32'h0000_0000
@@ -14,8 +17,10 @@ module deploy_chip
 
 
 	// Accel i2c exernal pullups
+`ifndef ACCEL_SIM	
 	inout sda,  					// pin 132
 	inout scl,  					// pin 65
+`endif // ACCEL_SIM	
 
 	// Cont_sense
 	input  logic cont_sense, 	// pin 105
@@ -90,14 +95,17 @@ module deploy_chip
 
 	
 	// Trisate I/Os I2c bus
+`ifndef ACCEL_SIM	
 	ioe_pad i_sda(.din(sda_out),.dout(sda_in),.oe(sda_oe),.pad_io(sda));
 	ioe_pad i_scl(.din(scl_out),.dout(scl_in),.oe(scl_oe),.pad_io(scl));
+`endif
 	
 	// Hook to simualted port
-	//logic sda_soe;
-	//assign scl_in = ( scl_oe ) ? 0 : 1;
-	//assign sda_in = ( sda_oe || sda_soe ) ? 0 : 1;
-	
+`ifdef ACCEL_SIM
+	logic sda_soe;
+	assign scl_in = ( scl_oe ) ? 0 : 1;
+	assign sda_in = ( sda_oe || sda_soe ) ? 0 : 1;
+`endif
 
 	logic [4:0] key; // keypad, bit 4 indicates pressed
 	
@@ -265,22 +273,24 @@ module deploy_chip
   	/////////////////////
 
 	// Wire up an accel sim model 
-	//wire [11:0] x, y, z; // accell inputs into model
-	//accel_slave i_accel_sim (
-   // 	.clk(clk),
-   // 	.reset(reset),
-	//	.en( 1 ),
-   // 	.sda( sda_in )     ,
-   // 	.sda_oe( sda_soe )     ,
-   // 	.scl( scl_in ) ,
-   // 	.x( x ),
-   // 	.y( y ),
-   // 	.z( z )
-	//);
-	//assign x = ( key == 5'h1A ) ?  1250 :
-	//			  ( key == 5'h1B ) ? -1250 : 0;
-	//assign y = count[25-:12];
-	//assign z = count[28-:12];
+`ifdef ACCEL_SIM
+	wire [11:0] x, y, z; // accell inputs into model
+	accel_slave i_accel_sim (
+    	.clk(clk),
+    	.reset(reset),
+		.en( 1 ),
+    	.sda( sda_in )     ,
+    	.sda_oe( sda_soe )     ,
+    	.scl( scl_in ) ,
+    	.x( x ),
+    	.y( y ),
+    	.z( z )
+	);
+	assign x = ( key == 5'h1A ) ?  1250 :
+				  ( key == 5'h1B ) ? -1250 : 0;
+	assign y = count[25-:12];
+	assign z = count[28-:12];
+`endif
 
   	/////////////////////
 	// Bus Monitor
