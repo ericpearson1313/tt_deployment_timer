@@ -186,11 +186,11 @@ module ldt_core (
 	// Dump = safe
 	assign safe = ( timer < 25 ) ? 1'b1 : 1'b0;
 	always @(posedge clk)
-		dump <= ( timer < 25 || timer > end_time ) ? 1'b1 : 1'b0;
+		dump <= ( timer < 25 || timer > end_time + 1 ) ? 1'b1 : 1'b0;
 
 	// PreCharge (0.5 sec)
 	always @(posedge clk)
-		charge <= ( timer >= pre_time && timer < end_time ) ? 1'b1 : 1'b0 ;
+		charge <= ( timer >= pre_time - 1 && timer < end_time - 1 ) ? 1'b1 : 1'b0 ;
 
 	// Deployment (10ms)
 	always @(posedge clk)
