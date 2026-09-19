@@ -15,10 +15,16 @@ A chip starts with a [datasheet](XS-LDT-01_Datasheet.pdf)
 
 ## How to test
 
-TBD
+A development board was designed, built, and tested. Along with a Max10 I/o Monitoring fpga, the TT pmods can be connected directly
+to emulation headers on the development board. Also before endangering the hardware a Max10 chip tester (using the sys model 
+used in verificaiton) can be used to test and observe safe reset and operation.
+
+## Verification Summary
+
+This design was validated through a full end‑to‑end pipeline: accelerated RTL simulation (Icarus/Verilator) and gate‑level reset/X‑prop checks; MAX10 FPGA prototyping with real accelerometer and FRAM hardware‑in‑loop; a rocket flight test with recovered logs that exposed and resolved a periodic write bug; Forge silicon bring‑up using the MAX10 full‑chip emulator and an independent monitor for signal observation; iterative board revisions driven by real hardware behavior; and final OTP, PCB‑level, and system‑level tests confirming correct sequencing, safety behavior, and deployment timing. The commit history captures each stage of this progression, demonstrating repeated, real‑world validation before tapeout
 
 ## External hardware
 
-Primary hardware: MXC400 accelerometer by I2C bus, a piezo (2pin), Dip_sw4. Two connections to a continuity test circuit and 4 deployment connections.
+Primary hardware: MXC400 accelerometer by I2C bus, a piezo, Dip_sw4. Two connections to a continuity test circuit and 4 deployment connections.
 
-A development board for chip bring-up was planned ( see datasheet )
+
