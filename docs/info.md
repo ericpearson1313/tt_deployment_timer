@@ -13,6 +13,10 @@ This TinyTapeout design implements a complete launch‑detect deployment timer (
 
 A chip starts with a [datasheet](XS-LDT-01_Datasheet.pdf)
 
+![LTD Dev Board](ltd_dev_board.jpg)
+
+Photo of dev board. Left board populated except LDT chip, right with LDT chip (SLG47910V with TT logic). The emulation header breaks out all the chip I/O and allows two boards for testing.
+
 ## How to test
 
 A development board was designed, built, and tested. Along with a Max10 I/o Monitoring fpga, the TT pmods can be connected directly
@@ -21,7 +25,7 @@ used in verificaiton) can be used to test and observe safe reset and operation.
 
 ## Verification Summary
 
-This design was validated through a full end‑to‑end pipeline: accelerated RTL simulation (Icarus/Verilator) and gate‑level reset/X‑prop checks; MAX10 FPGA prototyping with real accelerometer and FRAM hardware‑in‑loop; a rocket flight test with recovered logs that exposed and resolved a periodic write bug; Forge silicon bring‑up using the MAX10 full‑chip emulator and an independent monitor for signal observation; iterative board revisions driven by real hardware behavior; and final OTP, PCB‑level, and system‑level tests confirming correct sequencing, safety behavior, and deployment timing. The commit history captures each stage of this progression, demonstrating repeated, real‑world validation before tapeout
+This design was validated through a full end‑to‑end pipeline: accelerated RTL simulation (Icarus/Verilator) and gate‑level reset/X‑prop checks; MAX10 FPGA prototyping with real accelerometer and FRAM hardware-in-loop; a flight test with recovered logs that exposed and resolved a periodic write bug; Forge silicon bring‑up using the MAX10 full‑chip emulator and an independent monitor for signal observation; iterative board revisions driven by real hardware behavior; and final OTP, PCB‑level, and system‑level tests confirming correct sequencing, safety behavior, and deployment timing. The commit history captures each stage of this progression, demonstrating repeated, real‑world validation before tapeout
 
 ## External hardware
 
