@@ -16,7 +16,7 @@ This chip starts with a [datasheet](XS-LDT-01_Datasheet.pdf) where the chip I/O 
 ![Chip Block Diagram](chip_block_diagram.png)
 The I/O is expanded internally into a chip block diagram.
 
-![Chip Block Diagram](chip_block_diagram.png)
+![System Diagram](system_diagram.png)
 And the I/O is expanded out into the system diagram so the chip context is clear.
 
 ![LDT Dev Board](ldt_dev_board.jpg)
