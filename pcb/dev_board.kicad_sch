@@ -6511,7 +6511,7 @@
     (property "DPN" "SI2333-TPMSCT-ND" (at 304.165 53.975 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "LCSC PN" "C2998060" (at 304.165 53.975 0)
+    (property "LCSC PN" "C344008" (at 304.165 53.975 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (pin "1" (uuid 8838b191-7627-4239-a580-1127656d60f0))

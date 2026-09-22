@@ -16,7 +16,7 @@
 "Q3, Q5, Q6","MMBT3904","Package_TO_SOT_SMD:SOT-23","https://www.digikey.ca/en/products/detail/diotec-semiconductor/MMBT3904/13163698","4878-MMBT3904CT-ND","C7420353","3"
 "Q4","SL2319","Package_TO_SOT_SMD:SOT-23","https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/7181/SL2319A%20SOT-23.PDF","5399-SL2319ACT-ND","C347478","1"
 "Q7","MMBT3906","Package_TO_SOT_SMD:SOT-23","https://www.digikey.ca/en/products/detail/diotec-semiconductor/MMBT3906/13163222","4878-MMBT3906CT-ND","C7420354","1"
-"Q8","SI2333","Package_TO_SOT_SMD:SOT-23","https://www.mccsemi.com/pdf/Products/SI2333(SOT-23).pdf","SI2333-TPMSCT-ND","C2998060","1"
+"Q8","SI2333","Package_TO_SOT_SMD:SOT-23","https://www.mccsemi.com/pdf/Products/SI2333(SOT-23).pdf","SI2333-TPMSCT-ND","C344008","1"
 "R1","0R","Resistor_SMD:R_0603_1608Metric","","P0.0GCT-ND","C21189","1"
 "R2, R6","2K7","Resistor_SMD:R_0603_1608Metric","","311-2.70KHRCT-ND","C13167","2"
 "R3, R7, R17","1M","Resistor_SMD:R_0603_1608Metric","","311-1.00MHRCT-ND","C22935","3"
