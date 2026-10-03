@@ -46,7 +46,7 @@ int main(void)
 
     // --- Extract 50 X-fields stepping forward by 10 ---
     // X-field = bits [31:20] (example: adjust if your X is elsewhere)
-    int count = 500;
+    int count = 410;
     int step  = 10;
 
     int pos = start;
