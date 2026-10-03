@@ -132,6 +132,7 @@ module accel_master (
 	always_ff @(posedge clk)
 		data <=   ( byte_cnt >= 6 && byte_cnt <= 11 ) ? 1'b0 : // read during bytes 6 thru 11
 				  ( bit_cnt == 0 || bit_cnt == 9 || bit_cnt == 10 ) ? 1'b0 : // no data other than bits 1 thru 8
+				  ( cyc_cnt != 0 ) ? data : // hold for bit time
 				  // accel init
 				  ( byte_cnt == 0 ) ? !cmd_write[idx] :
 				  ( byte_cnt == 1 ) ? !init_addr[idx] :

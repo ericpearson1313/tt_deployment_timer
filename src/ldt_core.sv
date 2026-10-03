@@ -28,7 +28,7 @@ module ldt_core (
     );
 
 	// Tie off outputs
-	//assign cont_enable = 1; // active low
+	//assign cont_enable = 0; 
 	//assign speaker = 0;
 	//assign speaker_n = 0;
 	//assign deploy = 0;
@@ -98,7 +98,7 @@ module ldt_core (
 	// Continuity
 	logic safe;
 	always_ff @(posedge clk)
-		cont_enable <= ( reset ) ? 1 : ( safe && audio_cnt >=9 && audio_cnt < 15 ) ? 1'b0 : 1'b1;
+		cont_enable <= ( reset ) ? 0 : ( safe && audio_cnt >=9 && audio_cnt < 15 ) ? 1'b1 : 1'b0;
 	
 	logic cont_sense_q;
 	always_ff @(posedge clk)
@@ -163,9 +163,15 @@ module ldt_core (
 
 	assign end_time = ( dip_sw ^ 4'hF ) * 100 + 100;
 	assign pre_time = end_time - 50;
+	logic [1:0] skip; // up to 2 skips allowed during 25 cycle
+	always @(posedge clk)
+		skip  <= ( reset ) ? 0 :
+                 ( tick && timer < 25 && timer > 1 && !launch_enable && skip < 2 ) ? skip + 1 : 
+				 ( tick && timer < 25 && timer > 1 && !launch_enable ) ? 0 : skip;
 	always @(posedge clk)
 		timer <= ( reset ) ? 0 :
 				 ( tick && timer <  25 &&  launch_enable ) ? timer + 1 :
+				 ( tick && timer <  25 && !launch_enable && skip < 2 ) ? timer + 1 :
 				 ( tick && timer <  25 && !launch_enable ) ? 0 :
 				 ( tick && timer >= 25 && timer < 11'h7FF ) ? timer + 1 : timer; // latch at max
 
@@ -180,11 +186,11 @@ module ldt_core (
 	// Dump = safe
 	assign safe = ( timer < 25 ) ? 1'b1 : 1'b0;
 	always @(posedge clk)
-		dump <= ( timer < 25 || timer >= end_time ) ? 1'b1 : 1'b0;
+		dump <= ( timer < 25 || timer > end_time + 1 ) ? 1'b1 : 1'b0;
 
 	// PreCharge (0.5 sec)
 	always @(posedge clk)
-		charge <= ( timer >= pre_time && timer < end_time ) ? 1'b1 : 1'b0 ;
+		charge <= ( timer >= pre_time - 1 && timer < end_time - 1 ) ? 1'b1 : 1'b0 ;
 
 	// Deployment (10ms)
 	always @(posedge clk)
