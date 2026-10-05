@@ -52,7 +52,12 @@
 
     // PLL Control, 50 Mhz int Osc Ref,  48 Mhz out
     assign pll_en = 1'b1;
+`define HALF_CLOCK
+`ifdef HALF_CLOCK
+    assign pll_refdiv = 6'b00_0010;		// Equivalent value in decimal form 6'd1,
+`else
     assign pll_refdiv = 6'b00_0001;		// Equivalent value in decimal form 6'd1,
+`endif
     assign pll_fbdiv = 12'b0000_0001_1000;	// Equivalent value in decimal form 12'd24,
     assign pll_postdiv1 = 3'b101;		// Equivalent value in decimal form 3'd5,
     assign pll_postdiv2 = 3'b101;		// Equivalent value in decimal form 3'd5,

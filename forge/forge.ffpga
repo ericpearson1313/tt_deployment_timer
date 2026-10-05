@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<GPDProject version="40" oldestCompatibleVersion="32" GPDVersion="6.53.001" lastChange="18 Sep 2026 11:25:12" projectChecksumState="0" projectChecksum="6d2c5d90">
+<GPDProject version="40" oldestCompatibleVersion="32" GPDVersion="6.53.001" lastChange="5 Oct 2026 15:52:29" projectChecksumState="0" projectChecksum="5c32a8f5">
     <Metadata>
         <LegalNotice>This Design was generated using Renesas' proprietary Go Configure Software Hub and is provided for use solely in connection with Renesas GreenPAK integrated circuits. Any unauthorized use, reproduction, distribution, or manufacture of this Design is prohibited. This Design is provided 'AS IS' without warranties of any kind.</LegalNotice>
     </Metadata>
@@ -639,7 +639,7 @@
                 <maximumRoutingIterations>300</maximumRoutingIterations>
                 <placeAndTrialRoute>false</placeAndTrialRoute>
                 <placeAndTrialRouteIterationCount>20</placeAndTrialRouteIterationCount>
-                <timingAnalysisCorner>0</timingAnalysisCorner>
+                <timingAnalysisCorner>2</timingAnalysisCorner>
             </generateBitstream>
             <simulation>
                 <wavedumpOutputFormat>1</wavedumpOutputFormat>
@@ -663,7 +663,7 @@
             <openedTab>Resources Report</openedTab>
             <openedTab>Timing Analysis</openedTab>
             <openedTab>forge_wrapper.v</openedTab>
-            <openedTab>PLL Configurator</openedTab>
+            <openedTab>../../../src/ldt_core.sv</openedTab>
         </openedTabs>
         <pipelineStagesStates>
             <pipelineStageState>

@@ -51,7 +51,11 @@ module ldt_core (
 	logic stop_rec, start_rec;
 	logic [11:0] xs, ys, zs;
 	logic [2:0] start_cnt;
+`ifdef HALF_CLOCK
+	accel_master_div2 i_accel (
+`else
 	accel_master i_accel (
+`endif
 		.clk			( clk ),
 		.reset		( reset ),
 		// i2c bus
@@ -120,12 +124,20 @@ module ldt_core (
 	
 
 	// Speaker Tone Generator
-	localparam NOTE_C8 = 13'h1665; // C8 � 4186 Hz 
-	localparam NOTE_D8 = 13'h13F5; // D8 � 4698 Hz
-	localparam NOTE_E8 = 13'h11C7; // E8 � 5274 Hz
-	localparam NOTE_F8 = 13'h10C7; // F8 � 5588 Hz
-	localparam NOTE_G8 = 13'h0EF3; // G8 � 6272 Hz
-	
+`ifdef HALF_CLOCK
+	localparam NOTE_C8 = 13'h0B32; // C8 ≈ 4186 Hz
+	localparam NOTE_D8 = 13'h09FA; // D8 ≈ 4698 Hz
+	localparam NOTE_E8 = 13'h08E3; // E8 ≈ 5274 Hz
+	localparam NOTE_F8 = 13'h0863; // F8 ≈ 5588 Hz
+	localparam NOTE_G8 = 13'h0779; // G8 ≈ 6272 Hz
+`else
+	localparam NOTE_C8 = 13'h1665; // C8 � 4186 Hz
+	localparam NOTE_D8 = 13'h13F5; // D8 � 4698 Hz
+	localparam NOTE_E8 = 13'h11C7; // E8 � 5274 Hz
+	localparam NOTE_F8 = 13'h10C7; // F8 � 5588 Hz
+	localparam NOTE_G8 = 13'h0EF3; // G8 � 6272 Hz
+`endif
+
 	logic [12:0] tone_cnt;
 	logic cont_tone;
 	logic spk_en, spk_toggle;
