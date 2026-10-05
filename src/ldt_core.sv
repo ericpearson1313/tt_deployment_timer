@@ -179,11 +179,11 @@ module ldt_core (
 	always @(posedge clk)
 		skip  <= ( reset ) ? 0 :
                  ( tick && timer < 25 && timer > 1 && !launch_enable && skip < 2 ) ? skip + 1 : 
-				 ( tick && timer < 25 && timer > 1 && !launch_enable ) ? 0 : skip;
+				 ( tick && timer < 25 && !launch_enable ) ? 0 : skip;
 	always @(posedge clk)
 		timer <= ( reset ) ? 0 :
 				 ( tick && timer <  25 &&  launch_enable ) ? timer + 1 :
-				 ( tick && timer <  25 && !launch_enable && skip < 2 ) ? timer + 1 :
+				 ( tick && timer <  25 && timer > 1 && !launch_enable && skip < 2 ) ? timer + 1 :
 				 ( tick && timer <  25 && !launch_enable ) ? 0 :
 				 ( tick && timer >= 25 && timer < 11'h7FF ) ? timer + 1 : timer; // latch at max
 
