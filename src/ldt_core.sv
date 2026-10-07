@@ -34,7 +34,7 @@ module ldt_core (
 	//assign deploy = 0;
 	//assign dump = 1; // defaunt on 
 	//assign charge = 0;
-	assign status_led = 1; // power led
+	//assign status_led = 1; // power led
 	//assign sda_oe = 0;
 	//assign sda_out = 0;
 	//assign scl_oe = 0;
@@ -170,6 +170,10 @@ module ldt_core (
 	
 	assign speaker = spk_toggle & spk_en ; 
 	assign speaker_n = !spk_toggle & spk_en ;
+	
+	// Status LED follows active tones, but off when done.
+	always @(posedge clk)
+		status_led <= spk_en & !done;
 
 	// Timer
 
