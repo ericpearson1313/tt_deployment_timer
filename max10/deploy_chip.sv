@@ -93,10 +93,11 @@ module deploy_chip
 	ioe_pad i_scl(.din(scl_out),.dout(scl_in),.oe(scl_oe),.pad_io(scl));
 	
 	// Hook to simualted port
-	//logic sda_soe;
+	logic sda_soe;
 	//assign scl_in = ( scl_oe ) ? 0 : 1;
 	//assign sda_in = ( sda_oe || sda_soe ) ? 0 : 1;
 	assign sda_out = 0;
+	assign sda_oe  = sda_soe;
 	assign scl_out = 0;
    assign scl_oe  = 0;
 
