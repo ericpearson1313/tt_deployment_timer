@@ -349,7 +349,7 @@ module deploy_chip
 	assign probe[1] = ym;	// y
 	assign probe[2] = zm; 	// z
 	assign probe[3] = fpga_probe;
-	assign probe[4] = { 2'h0, dip_sw[3:0], 6'h00 }; 
+	assign probe[4] = { 2'h0, { sw8, sw4, sw2, sw1 }, 6'h00 }; 
 
 	
 	//////////////////////////////
