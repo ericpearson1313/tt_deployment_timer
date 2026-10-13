@@ -13,31 +13,30 @@ module deploy_chip
 	/////////////
 
 
-	// Accel i2c exernal pullups
-	inout sda,  					// pin 132
-	inout scl,  					// pin 65
+	// Accel i2c bidir port, exernal pullups
+	inout sda,  // pin 140
+	inout scl,  // pin 62
 
-	// Cont_sense
-	output logic cont_sense, 	// pin 105
-	input  logic cont_enable,	// pin 102
-	
-	// Speaker/Led
-	input logic speaker, 		// pin 99
-	input logic speaker_n, 		// pin 101
-	input logic status_led,		// pin 66
-	
-	// Controls
-	input logic charge, 			// pin 106
-	input logic dump,   			// pin 140
-	input logic deploy, 			// pin 127
-	
-	// Disp switch
-	output logic	sw1,			// pin 62
-	output logic	sw2,			// pin 135
-	output logic	sw4,			// pin 124
-	output logic	sw8,			// pin 100
-	
-	
+   // Cont_sense
+   output logic cont_sense,     // pin 105
+   input  logic cont_enable,    // pin 102
+   
+   // Speaker/Led
+   input logic speaker,         // pin 99
+   input logic speaker_n,         // pin 101
+   input logic status_led,        // pin 66
+   
+   // Controls
+   input logic charge,             // pin 106
+   input logic dump,               // pin 140
+   input logic deploy,             // pin 127
+   
+   // Disp switch
+   output logic    sw1,            // pin 62
+   output logic    sw2,            // pin 135
+   output logic    sw4,            // pin 124
+   output logic    sw8,            // pin 100
+
 	
 	////////////
 	// DEBUG IO
@@ -70,7 +69,7 @@ module deploy_chip
 );
 
 	// all I/O is internally emulated in the code as we are a full simulation
-	//logic 		sw1, sw2, sw4, sw8;
+   //logic         sw1, sw2, sw4, sw8;
 	//logic 		cont_sense	;
 	//logic 		cont_enable	;
 	//logic 		speaker		;
@@ -99,8 +98,7 @@ module deploy_chip
 	//assign sda_in = ( sda_oe || sda_soe ) ? 0 : 1;
 	assign sda_out = 0;
 	assign scl_out = 0;
-	assign scl_oe  = 0;
-	
+   assign scl_oe  = 0;
 
 	logic [4:0] key; // keypad, bit 4 indicates pressed
 	
@@ -154,10 +152,14 @@ module deploy_chip
 		);
 		
 	// delayed from fpga config and external reset d-assert
+	
+	logic [1:0] meta_reset;
+	always @(posedge clk) 
+		meta_reset <= { meta_reset[0], !reset_n };
 
 	logic [3:0] reset_shift = 0; // initial value upon config
 	always @(posedge clk) begin
-			if( !reset_n ) begin
+			if( meta_reset[1] ) begin
 				reset_shift <= 4'h0;
 			end else begin
 				if( reset_shift != 4'HF ) begin
@@ -169,7 +171,8 @@ module deploy_chip
 	end
 
 	logic reset;
-	assign reset = (reset_shift[3:0] != 4'hF) ? 1'b1 : 1'b0; // reset de-asserted after all bit shifted in 
+	always @(posedge clk) 
+		reset <= (reset_shift[3:0] != 4'hF) ? 1'b1 : 1'b0; // reset de-asserted after all bit shifted in 
 
 
 	// AIN LED Display with counter
@@ -273,9 +276,9 @@ module deploy_chip
     	.clk(clk),
     	.reset(reset),
 		.en( 1 ),
-    	.sda( 	sda_in )     ,
-    	.sda_oe( sda_oe )     ,
-    	.scl( 	scl_in ) ,
+    	.sda( sda_in )     ,
+    	.sda_oe( sda_soe )     ,
+    	.scl( scl_in ) ,
     	.x( x ),
     	.y( y ),
     	.z( z )
@@ -346,7 +349,7 @@ module deploy_chip
 	assign probe[1] = ym;	// y
 	assign probe[2] = zm; 	// z
 	assign probe[3] = fpga_probe;
-	assign probe[4] = { 2'h0, sw8, sw4, sw2, sw1, 6'h00 }; 
+	assign probe[4] = { 2'h0, dip_sw[3:0], 6'h00 }; 
 
 	
 	//////////////////////////////
